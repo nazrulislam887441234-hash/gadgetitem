@@ -1,25 +1,10 @@
-import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { 
-    getAuth, 
-    onAuthStateChanged, 
-    signInWithPopup, 
-    GoogleAuthProvider, 
-    signInWithEmailAndPassword, 
-    createUserWithEmailAndPassword 
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { 
-    getFirestore, 
-    collection, 
-    query, 
-    where, 
-    getDocs, 
-    doc, 
-    getDoc, 
-    setDoc, 
-    serverTimestamp 
+  getFirestore, collection, query, where, getDocs, doc, setDoc, getDoc, limit 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-// ================= 1. FIREBASE CONFIGURATION =================
+import { 
+  getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 const firebaseConfig = {
   apiKey: "AIzaSyBEZA5iQBxOUJaKvFMtpVi6w-jMATNESoA",
   authDomain: "gadget-item.firebaseapp.com",
@@ -30,901 +15,673 @@ const firebaseConfig = {
   measurementId: "G-2YMX097PSJ"
 };
 
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
-const auth = getAuth(app);
+const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
+const googleProvider = new GoogleAuthProvider();
 
-// ================= GLOBAL APP STATE =================
+// --- State Variables ---
 let currentProduct = null;
-let currentProductId = null;
-let currentCategoryObj = null;
-let selectedVariantsState = {};
 let currentQuantity = 1;
+let selectedVariants = {};
 let currentImageIndex = 0;
-let countdownInterval = null;
-let pendingAction = null;
-let isSignupMode = false;
+let slideInterval = null;
+let currentUser = null;
+let pendingAction = null; // 'cart' or 'buy'
 
-// ================= 2. ROBUST SLUG EXTRACTION =================
-function extractProductSlug() {
-    const searchStr = window.location.search;
-    const pathname = window.location.pathname;
+// SVG Checkmark Icon (Reusable)
+const SVG_CHECK = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>`;
+const SVG_ERROR = `<svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`;
 
-    let rawSlug = null;
+// --- DOM Elements ---
+const skeletonLoader = document.getElementById('skeletonLoader');
+const productContent = document.getElementById('productContent');
+const descriptionCard = document.getElementById('descriptionCard');
+const statusCard = document.getElementById('statusCard');
+const statusTitle = document.getElementById('statusTitle');
+const statusMessage = document.getElementById('statusMessage');
+const statusIcon = document.getElementById('statusIcon');
+const cartBadge = document.getElementById('cartBadge');
+const authModal = document.getElementById('authModal');
 
-    // ১. প্রথমে URL Query Parameters চেক করা (যেমন: ?product-slug)
-    if (searchStr) {
-        let cleanQuery = searchStr.startsWith('?') ? searchStr.substring(1) : searchStr;
-        const params = cleanQuery.split(/[&;]/);
-        const trackingParams = ['fbclid', 'gclid', 'dclid', 'msclkid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+// --- Initialization ---
+document.addEventListener('DOMContentLoaded', async () => {
+  setupAuthObserver();
+  setupEventListeners();
 
-        for (let param of params) {
-            let parts = param.split('=');
-            let key = decodeURIComponent(parts[0] || '').trim();
-            let value = decodeURIComponent(parts[1] || '').trim();
+  const slug = extractSlugFromURL();
+  if (!slug) {
+    showStatusState("Missing Product", "The correct slug or ID was not found.");
+    await loadSuggestedProducts(null);
+    return;
+  }
 
-            if (trackingParams.includes(key.toLowerCase())) {
-                continue;
-            }
+  const product = await fetchProductBySlug(slug);
+  if (!product) {
+    showStatusState("Product Not Found", "This product was not found or has been deleted.");
+    await loadSuggestedProducts(null);
+    return;
+  }
 
-            // যদি key-র ভেতরেই ভ্যালু না থাকে (যেমন ?my-product-slug), তবে key টাই স্লাগ
-            if (key && !value) {
-                rawSlug = key;
-                break;
-            } else if (key && value) {
-                // যদি ?slug=my-product ফরম্যাটে হয়
-                rawSlug = value;
-                break;
-            }
-        }
-    }
+  if (!product.active) {
+    showStatusState("Unavailable", "This product is currently unavailable. You can explore other products from our store.");
+    await loadSuggestedProducts(null);
+    return;
+  }
 
-    // ২. যদি কুয়েরি থেকে না পাওয়া যায়, পাথ থেকে নেওয়ার চেষ্টা করা (যেমন: /product/my-slug)
-    if (!rawSlug && pathname) {
-        const segments = pathname.split('/').filter(Boolean);
-        if (segments.length > 0) {
-            const lastSegment = segments[segments.length - 1];
-            if (lastSegment !== 'product' && lastSegment !== 'shop') {
-                rawSlug = lastSegment;
-            }
-        }
-    }
-
-    if (!rawSlug) return null;
-
-    // ক্লিনআপ
-    rawSlug = rawSlug.replace(/=+$/, '').trim();
-    return rawSlug;
-}
-
-// ================= 3. INITIALIZATION & ROUTING =================
-document.addEventListener("DOMContentLoaded", async () => {
-    initAuthListener();
-    initUIEventListeners();
-
-    const extractedSlug = extractProductSlug();
-    
-    if (!extractedSlug) {
-        showErrorState("Invalid Product Link", "The product link is invalid or missing required parameters.", "/all-product");
-        return;
-    }
-
-    await loadProductData(extractedSlug);
+  // Active Product Found
+  currentProduct = product;
+  renderProductUI(product);
+  updateSEO(product);
+  await loadSuggestedProducts(product.categoryId, product.id);
 });
 
-// ================= 4. PRODUCT FETCHING & VALIDATION =================
-async function loadProductData(slug) {
-    try {
-        showLoadingState(true);
+// --- URL Slug Parser ---
+function extractSlugFromURL() {
+  const search = window.location.search;
+  if (!search || search.length <= 1) return null;
 
-        // ফ্লেক্সিবল স্লাগ রেজোলিউশন (বিভিন্ন ফরম্যাটে ট্রাই করা)
-        let decodedSlug = decodeURIComponent(slug);
-        let slugsToTry = [
-            slug, 
-            decodedSlug,
-            slug.toLowerCase(),
-            decodedSlug.toLowerCase()
-        ];
+  // Extract first parameter key
+  const queryWithoutQuestion = search.substring(1);
+  const firstParam = queryWithoutQuestion.split('&')[0];
+  let rawKey = firstParam.split('=')[0];
 
-        if (slug.endsWith('-true')) {
-            const stripped = slug.replace(/-true$/, '');
-            if (stripped && !slugsToTry.includes(stripped)) {
-                slugsToTry.push(stripped);
-                slugsToTry.push(stripped.toLowerCase());
-            }
-        }
+  rawKey = decodeURIComponent(rawKey).trim();
 
-        let docSnap = null;
+  // Exclude tracking params
+  const trackingParams = ['fbclid', 'gclid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'ref'];
+  if (trackingParams.includes(rawKey.toLowerCase())) return null;
 
-        // প্রথমে 'productSlug' ফিল্ড দিয়ে খোঁজা
-        for (let testSlug of slugsToTry) {
-            const q = query(collection(db, "products"), where("productSlug", "==", testSlug));
-            const querySnapshot = await getDocs(q);
-            if (!querySnapshot.empty) {
-                docSnap = querySnapshot.docs[0];
-                break;
-            }
-        }
-
-        // যদি 'productSlug' দিয়ে না পাওয়া যায়, তবে ডকুমেন্ট আইডি (ID) হিসেবে চেক করা
-        if (!docSnap) {
-            for (let testSlug of slugsToTry) {
-                try {
-                    const docRef = doc(db, "products", testSlug);
-                    const directSnap = await getDoc(docRef);
-                    if (directSnap.exists()) {
-                        docSnap = directSnap;
-                        break;
-                    }
-                } catch (e) {
-                    // ইগনোর ইনভ্যালিড আইডি ফরম্যাট এরর
-                }
-            }
-        }
-
-        // শেষ চেষ্টা: সব প্রোডাক্ট ফেচ করে ক্লায়েন্ট সাইডে ফিল্টার করা (যদি ডেটাবেজ সেন্সিটিভ হয়)
-        if (!docSnap) {
-            const allProductsSnapshot = await getDocs(collection(db, "products"));
-            for (let d of allProductsSnapshot.docs) {
-                const data = d.data();
-                const pSlug = String(data.productSlug || "").trim().toLowerCase();
-                for (let testSlug of slugsToTry) {
-                    if (pSlug === testSlug.toLowerCase()) {
-                        docSnap = d;
-                        break;
-                    }
-                }
-                if (docSnap) break;
-            }
-        }
-
-        // প্রোডাক্ট না পাওয়া গেলে সঠিক এরর স্টেট কল করা
-        if (!docSnap || !docSnap.exists()) {
-            showErrorState("Product Not Found", "The requested product does not exist in our catalog or may have been removed.", "/all-product");
-            return;
-        }
-
-        currentProductId = docSnap.id;
-        currentProduct = docSnap.data();
-
-        // Category Lookup
-        if (currentProduct.categoryId) {
-            try {
-                const catDocRef = doc(db, "categories", currentProduct.categoryId);
-                const catDocSnap = await getDoc(catDocRef);
-                if (catDocSnap.exists()) {
-                    currentCategoryObj = catDocSnap.data();
-                }
-            } catch (err) {
-                console.warn("Could not fetch category document:", err);
-            }
-        }
-
-        renderProductPage();
-        showLoadingState(false);
-
-        checkAndExecutePendingAction();
-
-    } catch (error) {
-        console.error("Error loading product:", error);
-        showErrorState("Unable to load this product.", "An error occurred while fetching product data. Please check your internet connection and try again.", null, true);
-    }
+  // Normalize slug: remove trailing -true or =
+  let normalized = rawKey.replace(/-true$/i, '');
+  return normalized || null;
 }
 
-// ================= 5. RENDERING PRODUCT UI =================
-function renderProductPage() {
-    if (!currentProduct) return;
+// --- Firestore Product Search ---
+async function fetchProductBySlug(normalizedSlug) {
+  try {
+    const q = query(collection(db, "products"), where("productSlug", "==", normalizedSlug), limit(1));
+    const querySnapshot = await getDocs(q);
 
-    const isActive = currentProduct.active === true;
-    const activeActionsEl = document.getElementById("activeProductActions");
-    const inactiveNoticeEl = document.getElementById("inactiveProductNotice");
-
-    if (isActive) {
-        if(activeActionsEl) activeActionsEl.classList.remove("hidden");
-        if(inactiveNoticeEl) inactiveNoticeEl.classList.add("hidden");
-    } else {
-        if(activeActionsEl) activeActionsEl.classList.add("hidden");
-        if(inactiveNoticeEl) inactiveNoticeEl.classList.remove("hidden");
+    if (!querySnapshot.empty) {
+      const docSnap = querySnapshot.docs[0];
+      return { id: docSnap.id, ...docSnap.data() };
     }
-
-    const prodName = currentProduct.productName || "Product";
-    document.title = `${prodName} | Gadgets Item`;
-
-    const descriptionText = currentProduct.productDescription ? currentProduct.productDescription.substring(0, 150) : "Explore top gadgets and accessories.";
-    const primaryImg = (currentProduct.productImage && currentProduct.productImage.length > 0) ? currentProduct.productImage[0] : "https://ghotimarket.com/banner1.png";
-
-    updateMetaTag('name', 'description', descriptionText);
-    updateMetaTag('property', 'og:title', `${prodName} | Gadgets Item`);
-    updateMetaTag('property', 'og:description', descriptionText);
-    updateMetaTag('property', 'og:image', primaryImg);
-    updateMetaTag('property', 'og:url', window.location.href);
-
-    const categoryName = currentCategoryObj?.categoryName || currentProduct.categoryName || "General";
-    const catBadge = document.getElementById("productCategoryBadge");
-    if(catBadge) catBadge.textContent = categoryName;
-
-    const titleEl = document.getElementById("productTitle");
-    if(titleEl) titleEl.textContent = prodName;
-    
-    const skuEl = document.getElementById("productSku");
-    if(skuEl) skuEl.textContent = currentProduct.SKU || "N/A";
-
-    const warrantyEl = document.getElementById("productWarranty");
-    const warrantyWrapper = document.getElementById("warrantyBadgeWrapper");
-    if (currentProduct.warranty && warrantyEl && warrantyWrapper) {
-        warrantyEl.textContent = currentProduct.warranty;
-        warrantyWrapper.style.display = "inline-flex";
-    } else if(warrantyWrapper) {
-        warrantyWrapper.style.display = "none";
-    }
-
-    const deliveryRow = document.getElementById("deliveryStatusRow");
-    if (deliveryRow) {
-        deliveryRow.style.display = (currentProduct.freeDelivery === true) ? "flex" : "none";
-    }
-
-    renderImageGallery(currentProduct.productImage);
-    renderVariants(currentProduct.variants);
-    updateCalculatedPriceAndDiscounts();
-    setupOfferCountdown(currentProduct.offerTime);
-
-    const descCard = document.getElementById("descriptionCardWrapper");
-    const descContent = document.getElementById("productDescriptionContent");
-    if (currentProduct.productDescription && descCard && descContent) {
-        descContent.innerHTML = escapeHtml(currentProduct.productDescription).replace(/\n/g, '<br>');
-        descCard.style.display = "block";
-    } else if(descCard) {
-        descCard.style.display = "none";
-    }
-
-    const videoCard = document.getElementById("videoCardWrapper");
-    const videoIframe = document.getElementById("productVideoIframe");
-    if (currentProduct.videoLink && isValidHttpUrl(currentProduct.videoLink) && videoCard && videoIframe) {
-        videoIframe.src = currentProduct.videoLink;
-        videoCard.style.display = "block";
-    } else if(videoCard) {
-        videoCard.style.display = "none";
-    }
-
-    injectStructuredData(prodName, primaryImg, descriptionText, currentProduct.SKU, categoryName);
+    return null;
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    return null;
+  }
 }
 
-// ================= 6. IMAGE GALLERY LOGIC =================
-function renderImageGallery(images) {
-    const mainImg = document.getElementById("mainProductImage");
-    const thumbStrip = document.getElementById("thumbnailStrip");
-    const prevBtn = document.getElementById("prevImageBtn");
-    const nextBtn = document.getElementById("nextImageBtn");
+// --- Render Main Product Page UI ---
+function renderProductUI(product) {
+  skeletonLoader.classList.add('hidden');
+  productContent.classList.remove('hidden');
 
-    if (!mainImg) return;
+  // Title & Basic Info
+  document.getElementById('productTitle').textContent = product.productName || 'Untitled Product';
 
-    if (!images || !Array.isArray(images) || images.length === 0) {
-        mainImg.src = "https://ghotimarket.com/banner1.png";
-        if(thumbStrip) thumbStrip.innerHTML = "";
-        if(prevBtn) prevBtn.style.display = "none";
-        if(nextBtn) nextBtn.style.display = "none";
-        return;
-    }
+  // Category Name Fetch
+  if (product.categoryId) {
+    fetchCategoryName(product.categoryId);
+  } else if (product.categoryName) {
+    document.getElementById('categoryWrapper').classList.remove('hidden');
+    document.getElementById('categoryValue').textContent = product.categoryName;
+  }
 
-    currentImageIndex = 0;
-    mainImg.src = images[0];
-    mainImg.alt = currentProduct.productName || "Product Image";
+  // SKU
+  if (product.SKU) {
+    document.getElementById('skuWrapper').classList.remove('hidden');
+    document.getElementById('skuValue').textContent = product.SKU;
+  }
 
-    if (images.length <= 1) {
-        if(prevBtn) prevBtn.style.display = "none";
-        if(nextBtn) nextBtn.style.display = "none";
-        if(thumbStrip) thumbStrip.style.display = "none";
-        return;
-    }
+  // Warranty & Delivery Badges
+  if (product.warranty) {
+    document.getElementById('warrantyBadge').classList.remove('hidden');
+    document.getElementById('warrantyText').textContent = `Warranty: ${product.warranty}`;
+  }
+  if (product.freeDelivery) {
+    document.getElementById('deliveryBadge').classList.remove('hidden');
+  }
 
-    if(prevBtn) prevBtn.style.display = "flex";
-    if(nextBtn) nextBtn.style.display = "flex";
-    if(thumbStrip) thumbStrip.style.display = "flex";
+  // Description
+  if (product.productDescription) {
+    descriptionCard.classList.remove('hidden');
+    document.getElementById('productDescription').textContent = product.productDescription;
+  }
 
-    if(thumbStrip) {
-        thumbStrip.innerHTML = "";
-        images.forEach((imgUrl, idx) => {
-            const thumb = document.createElement("div");
-            thumb.className = `thumbnail-item ${idx === 0 ? 'active' : ''}`;
-            thumb.innerHTML = `<img src="${escapeHtml(imgUrl)}" alt="Thumbnail ${idx + 1}" loading="lazy">`;
-            thumb.addEventListener("click", () => setMainImage(idx, images));
-            thumbStrip.appendChild(thumb);
-        });
-    }
+  // Countdown Offer
+  initCountdown(product.offerTime);
 
-    if(prevBtn) {
-        prevBtn.onclick = () => {
-            let newIdx = (currentImageIndex - 1 + images.length) % images.length;
-            setMainImage(newIdx, images);
-        };
-    }
+  // Gallery & Video
+  setupGallery(product.productImage || [], product.videoLink);
 
-    if(nextBtn) {
-        nextBtn.onclick = () => {
-            let newIdx = (currentImageIndex + 1) % images.length;
-            setMainImage(newIdx, images);
-        };
-    }
+  // Variants Render
+  renderVariants(product.variants || []);
+
+  // Pricing Calculation
+  updateCalculatedPrice();
 }
 
-function setMainImage(index, images) {
-    currentImageIndex = index;
-    const mainImg = document.getElementById("mainProductImage");
-    if (!mainImg) return;
-    
-    mainImg.style.opacity = "0.4";
-    setTimeout(() => {
-        mainImg.src = images[index];
-        mainImg.style.opacity = "1";
-    }, 150);
+// --- Pricing & Variants Logic ---
+function updateCalculatedPrice() {
+  let basePrice = Number(currentProduct.productPrice) || 0;
+  let extraSum = 0;
 
-    const thumbs = document.querySelectorAll(".thumbnail-item");
-    thumbs.forEach((th, idx) => {
-        if (idx === index) th.classList.add("active");
-        else th.classList.remove("active");
-    });
+  Object.values(selectedVariants).forEach(val => {
+    extraSum += Number(val.extraPrice) || 0;
+  });
+
+  const finalUnitPrice = basePrice + extraSum;
+
+  document.getElementById('currentPrice').textContent = `৳${finalUnitPrice.toLocaleString()}`;
+
+  // Discount Calculation
+  const oldPrice = Number(currentProduct.oldPrice) || 0;
+  const oldPriceElem = document.getElementById('oldPrice');
+  const discountBadge = document.getElementById('discountBadge');
+  const savingsAmount = document.getElementById('savingsAmount');
+
+  if (oldPrice > finalUnitPrice) {
+    const saved = oldPrice - finalUnitPrice;
+    const percent = Math.round((saved / oldPrice) * 100);
+
+    oldPriceElem.textContent = `৳${oldPrice.toLocaleString()}`;
+    oldPriceElem.classList.remove('hidden');
+
+    discountBadge.textContent = `${percent}% OFF`;
+    discountBadge.classList.remove('hidden');
+
+    savingsAmount.textContent = `You save: ৳${saved.toLocaleString()}`;
+    savingsAmount.classList.remove('hidden');
+  } else {
+    oldPriceElem.classList.add('hidden');
+    discountBadge.classList.add('hidden');
+    savingsAmount.classList.add('hidden');
+  }
 }
 
-// ================= 7. VARIANTS & PRICING LOGIC =================
 function renderVariants(variants) {
-    const container = document.getElementById("variantsContainer");
-    if (!container) return;
-    
-    container.innerHTML = "";
-    selectedVariantsState = {};
+  const wrapper = document.getElementById('variantsWrapper');
+  wrapper.innerHTML = '';
+  selectedVariants = {};
 
-    if (!variants || !Array.isArray(variants) || variants.length === 0) {
-        container.style.display = "none";
-        return;
-    }
+  if (!variants || variants.length === 0) return;
 
-    container.style.display = "flex";
+  variants.forEach((group, index) => {
+    const groupDiv = document.createElement('div');
+    groupDiv.className = 'variant-group';
 
-    variants.forEach((variantGroup, groupIndex) => {
-        const groupName = variantGroup.name || `Option ${groupIndex + 1}`;
-        selectedVariantsState[groupName] = null;
+    const label = document.createElement('span');
+    label.className = 'variant-label';
+    label.textContent = `${group.name}:`;
+    groupDiv.appendChild(label);
 
-        const groupDiv = document.createElement("div");
-        groupDiv.className = "variant-group";
+    const optionsDiv = document.createElement('div');
+    optionsDiv.className = 'variant-options';
 
-        const titleEl = document.createElement("div");
-        titleEl.className = "variant-group-title";
-        titleEl.textContent = groupName;
-        groupDiv.appendChild(titleEl);
+    group.values.forEach(valObj => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'variant-chip';
+      const extraTxt = valObj.extraPrice > 0 ? ` +৳${valObj.extraPrice}` : '';
+      btn.innerHTML = `<span>${escapeHTML(valObj.value)}${extraTxt}</span><span class="chk-icon hidden">${SVG_CHECK}</span>`;
 
-        const optionsList = document.createElement("div");
-        optionsList.className = "variant-options-list";
+      btn.addEventListener('click', () => {
+        // Toggle selection inside this group
+        optionsDiv.querySelectorAll('.variant-chip').forEach(c => {
+          c.classList.remove('selected');
+          c.querySelector('.chk-icon').classList.add('hidden');
+        });
+        btn.classList.add('selected');
+        btn.querySelector('.chk-icon').classList.remove('hidden');
 
-        if (variantGroup.values && Array.isArray(variantGroup.values)) {
-            variantGroup.values.forEach((valObj, valIndex) => {
-                const valName = valObj.value || valObj;
-                const extraPrice = Number(valObj.extraPrice) || 0;
+        selectedVariants[group.name] = valObj;
+        document.getElementById('variantError').classList.add('hidden');
+        updateCalculatedPrice();
+      });
 
-                const chip = document.createElement("button");
-                chip.type = "button";
-                chip.className = `variant-chip ${valIndex === 0 ? 'selected' : ''}`;
-                
-                let chipText = escapeHtml(valName);
-                if (extraPrice > 0) {
-                    chipText += ` +৳${extraPrice}`;
-                }
-
-                chip.innerHTML = valIndex === 0 
-                    ? `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>${chipText}`
-                    : chipText;
-
-                if (valIndex === 0) {
-                    selectedVariantsState[groupName] = { value: valName, extraPrice: extraPrice };
-                }
-
-                chip.addEventListener("click", () => {
-                    optionsList.querySelectorAll(".variant-chip").forEach(c => {
-                        c.classList.remove("selected");
-                        c.innerHTML = c.textContent.replace(/^[✓\s]+/, '');
-                    });
-
-                    chip.classList.add("selected");
-                    chip.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" stroke="currentColor" stroke-width="3" fill="none"><polyline points="20 6 9 17 4 12"></polyline></svg>${chipText}`;
-
-                    selectedVariantsState[groupName] = { value: valName, extraPrice: extraPrice };
-                    updateCalculatedPriceAndDiscounts();
-                });
-
-                optionsList.appendChild(chip);
-            });
-        }
-
-        groupDiv.appendChild(optionsList);
-        container.appendChild(groupDiv);
+      optionsDiv.appendChild(btn);
     });
+
+    groupDiv.appendChild(optionsDiv);
+    wrapper.appendChild(groupDiv);
+  });
 }
 
-function calculateFinalUnitPrice() {
-    let basePrice = Number(currentProduct?.productPrice) || 0;
-    let totalExtra = 0;
+// --- Image & Video Gallery ---
+function setupGallery(images, videoLink) {
+  const track = document.getElementById('sliderTrack');
+  const thumbList = document.getElementById('thumbnailList');
+  const prevBtn = document.getElementById('prevBtn');
+  const nextBtn = document.getElementById('nextBtn');
+  const tabVideo = document.getElementById('tabVideo');
+  const tabImages = document.getElementById('tabImages');
+  const sliderViewport = document.getElementById('sliderViewport');
+  const videoContainer = document.getElementById('videoContainer');
 
-    for (let group in selectedVariantsState) {
-        if (selectedVariantsState[group] && typeof selectedVariantsState[group].extraPrice === 'number') {
-            totalExtra += selectedVariantsState[group].extraPrice;
-        }
+  track.innerHTML = '';
+  thumbList.innerHTML = '';
+
+  const fallbackImg = 'https://ghotimarket.com/amrweb/banner1.png';
+  const imgList = images.length > 0 ? images : [fallbackImg];
+
+  imgList.forEach((src, idx) => {
+    // Slide Item
+    const slide = document.createElement('div');
+    slide.className = 'slide-item';
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = currentProduct?.productName || 'Product Image';
+    img.loading = idx === 0 ? 'eager' : 'lazy';
+    img.onerror = () => { img.src = fallbackImg; };
+    slide.appendChild(img);
+    track.appendChild(slide);
+
+    // Thumbnail Item
+    const thumb = document.createElement('div');
+    thumb.className = `thumb-item ${idx === 0 ? 'active' : ''}`;
+    thumb.innerHTML = `<img src="${src}" alt="Thumb" onerror="this.src='${fallbackImg}'">`;
+    thumb.addEventListener('click', () => {
+      currentImageIndex = idx;
+      updateSliderPosition();
+      switchToMedia('image');
+    });
+    thumbList.appendChild(thumb);
+  });
+
+  // Slider Navigation
+  prevBtn.addEventListener('click', () => {
+    currentImageIndex = (currentImageIndex - 1 + imgList.length) % imgList.length;
+    updateSliderPosition();
+    resetAutoSwipe();
+  });
+
+  nextBtn.addEventListener('click', () => {
+    currentImageIndex = (currentImageIndex + 1) % imgList.length;
+    updateSliderPosition();
+    resetAutoSwipe();
+  });
+
+  // Handle Video Tab
+  if (videoLink && videoLink.includes('embed')) {
+    tabVideo.classList.remove('hidden');
+    videoContainer.innerHTML = `<iframe src="${videoLink}" title="Product Video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+
+    tabVideo.addEventListener('click', () => switchToMedia('video'));
+    tabImages.addEventListener('click', () => switchToMedia('image'));
+  }
+
+  startAutoSwipe(imgList.length);
+}
+
+function updateSliderPosition() {
+  const track = document.getElementById('sliderTrack');
+  track.style.transform = `translateX(-${currentImageIndex * 100}%)`;
+
+  const thumbs = document.querySelectorAll('.thumb-item');
+  thumbs.forEach((t, i) => {
+    t.classList.toggle('active', i === currentImageIndex);
+  });
+}
+
+function switchToMedia(type) {
+  const sliderViewport = document.getElementById('sliderViewport');
+  const videoContainer = document.getElementById('videoContainer');
+  const tabImages = document.getElementById('tabImages');
+  const tabVideo = document.getElementById('tabVideo');
+
+  if (type === 'video') {
+    sliderViewport.classList.add('hidden');
+    videoContainer.classList.remove('hidden');
+    tabVideo.classList.add('active');
+    tabImages.classList.remove('active');
+    clearInterval(slideInterval);
+  } else {
+    videoContainer.classList.add('hidden');
+    sliderViewport.classList.remove('hidden');
+    tabImages.classList.add('active');
+    tabVideo.classList.remove('active');
+  }
+}
+
+function startAutoSwipe(length) {
+  if (length <= 1) return;
+  clearInterval(slideInterval);
+  slideInterval = setInterval(() => {
+    currentImageIndex = (currentImageIndex + 1) % length;
+    updateSliderPosition();
+  }, 4000);
+}
+
+function resetAutoSwipe() {
+  const images = currentProduct?.productImage || [];
+  startAutoSwipe(images.length);
+}
+
+// --- Offer Countdown ---
+function initCountdown(offerTime) {
+  if (!offerTime || offerTime <= Date.now()) return;
+
+  const countdownElem = document.getElementById('offerCountdown');
+  countdownElem.classList.remove('hidden');
+
+  function updateTimer() {
+    const now = Date.now();
+    const diff = offerTime - now;
+
+    if (diff <= 0) {
+      countdownElem.classList.add('hidden');
+      return;
     }
 
-    return basePrice + totalExtra;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+    const mins = Math.floor((diff / 1000 / 60) % 60);
+    const secs = Math.floor((diff / 1000) % 60);
+
+    document.getElementById('cdDays').textContent = String(days).padStart(2, '0');
+    document.getElementById('cdHours').textContent = String(hours).padStart(2, '0');
+    document.getElementById('cdMins').textContent = String(mins).padStart(2, '0');
+    document.getElementById('cdSecs').textContent = String(secs).padStart(2, '0');
+  }
+
+  updateTimer();
+  setInterval(updateTimer, 1000);
 }
 
-function updateCalculatedPriceAndDiscounts() {
-    if (!currentProduct) return;
+// --- Category Dynamic Fetch ---
+async function fetchCategoryName(categoryId) {
+  try {
+    const catDoc = await getDoc(doc(db, "categories", categoryId));
+    if (catDoc.exists()) {
+      document.getElementById('categoryWrapper').classList.remove('hidden');
+      document.getElementById('categoryValue').textContent = catDoc.data().categoryName || 'General';
+    }
+  } catch (err) {
+    console.warn("Could not load category:", err);
+  }
+}
 
-    const unitPrice = calculateFinalUnitPrice();
-    const oldPrice = Number(currentProduct.oldPrice) || 0;
+// --- Event Listeners ---
+function setupEventListeners() {
+  // Quantity Controls
+  document.getElementById('qtyMinus').addEventListener('click', () => {
+    if (currentQuantity > 1) {
+      currentQuantity--;
+      document.getElementById('qtyValue').textContent = currentQuantity;
+    }
+  });
 
-    const currentPriceDisplay = document.getElementById("currentPriceDisplay");
-    if(currentPriceDisplay) currentPriceDisplay.textContent = `৳${formatNumber(unitPrice)}`;
+  document.getElementById('qtyPlus').addEventListener('click', () => {
+    currentQuantity++;
+    document.getElementById('qtyValue').textContent = currentQuantity;
+  });
 
-    const oldPriceEl = document.getElementById("oldPriceDisplay");
-    const discountEl = document.getElementById("discountBadge");
-    const saveEl = document.getElementById("saveAmountDisplay");
+  // Action Buttons
+  document.getElementById('addToCartBtn').addEventListener('click', () => handleCartOrBuyAction('cart'));
+  document.getElementById('buyNowBtn').addEventListener('click', () => handleCartOrBuyAction('buy'));
 
-    if (oldPrice > unitPrice) {
-        const discountPercentage = Math.round(((oldPrice - unitPrice) / oldPrice) * 100);
-        const saveAmount = oldPrice - unitPrice;
+  // Auth Modal
+  document.getElementById('closeAuthModal').addEventListener('click', () => authModal.classList.add('hidden'));
+  document.getElementById('googleSignInBtn').addEventListener('click', handleGoogleLogin);
+}
 
-        if(oldPriceEl) { oldPriceEl.textContent = `৳${formatNumber(oldPrice)}`; oldPriceEl.style.display = "inline"; }
-        if(discountEl) { discountEl.textContent = `${discountPercentage}% OFF`; discountEl.style.display = "inline-block"; }
-        if(saveEl) { saveEl.textContent = `Save ৳${formatNumber(saveAmount)}`; saveEl.style.display = "block"; }
+// --- Add To Cart & Buy Now Flow ---
+async function handleCartOrBuyAction(actionType) {
+  if (!currentProduct || !currentProduct.active) return;
+
+  // Validate Variant Selection
+  const requiredGroupCount = currentProduct.variants ? currentProduct.variants.length : 0;
+  if (Object.keys(selectedVariants).length < requiredGroupCount) {
+    document.getElementById('variantError').classList.remove('hidden');
+    return;
+  }
+
+  pendingAction = actionType;
+
+  if (!currentUser) {
+    authModal.classList.remove('hidden');
+    return;
+  }
+
+  await processCartSaveAndNavigate();
+}
+
+async function processCartSaveAndNavigate() {
+  const isDuplicate = await checkAndSaveToCart();
+
+  if (pendingAction === 'buy') {
+    window.location.href = '/checkout';
+  } else if (pendingAction === 'cart') {
+    if (isDuplicate) {
+      showToast("Already cart added");
     } else {
-        if(oldPriceEl) oldPriceEl.style.display = "none";
-        if(discountEl) discountEl.style.display = "none";
-        if(saveEl) saveEl.style.display = "none";
+      showToast("Added to Cart successfully!");
+      updateCartBadge();
     }
+  }
+  pendingAction = null;
 }
 
-// ================= 8. QUANTITY SELECTOR LOGIC =================
-const decreaseBtn = document.getElementById("decreaseQtyBtn");
-const increaseBtn = document.getElementById("increaseQtyBtn");
-const qtyDisplay = document.getElementById("productQuantityDisplay");
+// --- Firestore Cart Saving & Check ---
+async function checkAndSaveToCart() {
+  if (!currentUser) return false;
 
-if(decreaseBtn) {
-    decreaseBtn.addEventListener("click", () => {
-        if (currentQuantity > 1) {
-            currentQuantity--;
-            if(qtyDisplay) qtyDisplay.textContent = currentQuantity;
-        }
-    });
-}
+  const userCartRef = doc(db, "carts", currentUser.uid);
 
-if(increaseBtn) {
-    increaseBtn.addEventListener("click", () => {
-        currentQuantity++;
-        if(qtyDisplay) qtyDisplay.textContent = currentQuantity;
-    });
-}
+  try {
+    const docSnap = await getDoc(userCartRef);
+    let items = [];
 
-// ================= 9. OFFER COUNTDOWN TIMER =================
-function setupOfferCountdown(offerTime) {
-    const box = document.getElementById("offerCountdownBox");
-    const valuesEl = document.getElementById("countdownValues");
-
-    if(!box) return;
-
-    if (!offerTime || typeof offerTime !== 'number' || offerTime <= Date.now()) {
-        box.style.display = "none";
-        return;
+    if (docSnap.exists()) {
+      items = docSnap.data().items || [];
     }
 
-    box.style.display = "block";
-    if (countdownInterval) clearInterval(countdownInterval);
-
-    function updateTimer() {
-        const now = Date.now();
-        const diff = offerTime - now;
-
-        if (diff <= 0) {
-            box.style.display = "none";
-            if (countdownInterval) clearInterval(countdownInterval);
-            return;
-        }
-
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-
-        const pad = (n) => String(n).padStart(2, '0');
-        if(valuesEl) valuesEl.textContent = `${pad(days)} Days ${pad(hours)} Hours ${pad(minutes)} Minutes ${pad(seconds)} Seconds`;
+    // Check if product already in cart
+    const existingIndex = items.findIndex(item => item.productId === currentProduct.id);
+    if (existingIndex > -1) {
+      return true; // Already exists
     }
 
-    updateTimer();
-    countdownInterval = setInterval(updateTimer, 1000);
-}
+    // Prepare item data
+    let basePrice = Number(currentProduct.productPrice) || 0;
+    let extraSum = 0;
+    Object.values(selectedVariants).forEach(v => extraSum += (Number(v.extraPrice) || 0));
+    const finalUnitPrice = basePrice + extraSum;
 
-// ================= 10. AUTHENTICATION & CART OPERATIONS =================
-let currentUser = null;
-
-function initAuthListener() {
-    onAuthStateChanged(auth, async (user) => {
-        currentUser = user;
-        updateHeaderCartCount();
-        if (user) {
-            closeAuthModal();
-        }
-    });
-}
-
-const addToCartBtn = document.getElementById("addToCartBtn");
-if(addToCartBtn) {
-    addToCartBtn.addEventListener("click", () => handleCartAction("addToCart"));
-}
-
-const buyNowBtn = document.getElementById("buyNowBtn");
-if(buyNowBtn) {
-    buyNowBtn.addEventListener("click", () => handleCartAction("buyNow"));
-}
-
-async function handleCartAction(actionType) {
-    if (!currentProduct || !currentProductId) return;
-
-    if (!currentUser) {
-        pendingAction = {
-            action: actionType,
-            productId: currentProductId,
-            quantity: currentQuantity,
-            variants: selectedVariantsState
-        };
-        sessionStorage.setItem("pendingProductAction", JSON.stringify(pendingAction));
-        openAuthModal();
-        return;
-    }
-
-    await executeCartOperation(actionType, currentUser);
-}
-
-async function executeCartOperation(actionType, user) {
-    try {
-        const unitPrice = calculateFinalUnitPrice();
-        const totalPrice = unitPrice * currentQuantity;
-        const productImage = (currentProduct.productImage && currentProduct.productImage.length > 0) ? currentProduct.productImage[0] : "";
-
-        const cartsQuery = query(collection(db, "carts"), where("uid", "==", user.uid));
-        const cartsSnapshot = await getDocs(cartsQuery);
-
-        let cartDocRef;
-        let cartData = { uid: user.uid, email: user.email, items: [] };
-
-        if (!cartsSnapshot.empty) {
-            const existingCartDoc = cartsSnapshot.docs[0];
-            cartDocRef = doc(db, "carts", existingCartDoc.id);
-            cartData = existingCartDoc.data();
-            if (!cartData.items) cartData.items = [];
-        } else {
-            cartDocRef = doc(collection(db, "carts"));
-        }
-
-        const existingItemIndex = cartData.items.findIndex(item => item.productId === currentProductId);
-
-        if (existingItemIndex !== -1) {
-            if (actionType === "addToCart") {
-                showToastNotification("Already cart added");
-                return;
-            }
-        } else {
-            const newItem = {
-                productId: currentProductId,
-                productName: currentProduct.productName || "Product",
-                productSlug: currentProduct.productSlug || "",
-                productImage: productImage,
-                selectedVariants: selectedVariantsState,
-                quantity: currentQuantity,
-                unitPrice: unitPrice,
-                totalPrice: totalPrice,
-                addedAt: serverTimestamp()
-            };
-            cartData.items.push(newItem);
-            await setDoc(cartDocRef, cartData, { merge: true });
-            updateHeaderCartCount();
-            showToastNotification("Product added to cart successfully");
-        }
-
-        if (actionType === "buyNow") {
-            window.location.href = "/checkout";
-        }
-
-    } catch (err) {
-        console.error("Cart operation error:", err);
-        showToastNotification("Unable to add this product to cart. Please try again.");
-    }
-}
-
-async function updateHeaderCartCount() {
-    const badge = document.getElementById("headerCartCount");
-    if (!badge) return;
-    if (!currentUser) {
-        badge.textContent = "0";
-        return;
-    }
-    try {
-        const q = query(collection(db, "carts"), where("uid", "==", currentUser.uid));
-        const snap = await getDocs(q);
-        let count = 0;
-        if (!snap.empty) {
-            const data = snap.docs[0].data();
-            if (data.items && Array.isArray(data.items)) {
-                count = data.items.length;
-            }
-        }
-        badge.textContent = count;
-    } catch (err) {
-        badge.textContent = "0";
-    }
-}
-
-async function checkAndExecutePendingAction() {
-    const storedActionStr = sessionStorage.getItem("pendingProductAction");
-    if (!storedActionStr || !currentUser) return;
-
-    try {
-        const actionObj = JSON.parse(storedActionStr);
-        sessionStorage.removeItem("pendingProductAction");
-
-        if (actionObj && actionObj.productId === currentProductId) {
-            currentQuantity = actionObj.quantity || 1;
-            if(qtyDisplay) qtyDisplay.textContent = currentQuantity;
-            await executeCartOperation(actionObj.action, currentUser);
-        }
-    } catch (err) {
-        console.error("Error executing pending action:", err);
-    }
-}
-
-// ================= 11. AUTH MODAL & FORM LOGIC =================
-const authModalOverlay = document.getElementById("authModalOverlay");
-const authCloseBtn = document.getElementById("authCloseBtn");
-const googleLoginBtn = document.getElementById("googleLoginBtn");
-const emailAuthForm = document.getElementById("emailAuthForm");
-const authToggleLink = document.getElementById("authToggleLink");
-const authToggleText = document.getElementById("authToggleText");
-const confirmPasswordGroup = document.getElementById("confirmPasswordGroup");
-const authSubmitBtn = document.getElementById("authSubmitBtn");
-const authErrorBanner = document.getElementById("authErrorBanner");
-
-function openAuthModal() {
-    if(authModalOverlay) authModalOverlay.classList.remove("hidden");
-}
-
-function closeAuthModal() {
-    if(authModalOverlay) authModalOverlay.classList.add("hidden");
-    if(authErrorBanner) authErrorBanner.classList.add("hidden");
-}
-
-if(authCloseBtn) authCloseBtn.addEventListener("click", closeAuthModal);
-if(authModalOverlay) {
-    authModalOverlay.addEventListener("click", (e) => {
-        if (e.target === authModalOverlay) closeAuthModal();
-    });
-}
-
-if(authToggleLink) {
-    authToggleLink.addEventListener("click", () => {
-        isSignupMode = !isSignupMode;
-        if (isSignupMode) {
-            if(authSubmitBtn) authSubmitBtn.textContent = "Sign Up";
-            if(authToggleText) authToggleText.textContent = "Already have an account?";
-            if(authToggleLink) authToggleLink.textContent = "Login";
-            if(confirmPasswordGroup) confirmPasswordGroup.classList.remove("hidden");
-        } else {
-            if(authSubmitBtn) authSubmitBtn.textContent = "Login";
-            if(authToggleText) authToggleText.textContent = "Don't have an account?";
-            if(authToggleLink) authToggleLink.textContent = "Sign Up";
-            if(confirmPasswordGroup) confirmPasswordGroup.classList.add("hidden");
-        }
-    });
-}
-
-if(googleLoginBtn) {
-    googleLoginBtn.addEventListener("click", async () => {
-        try {
-            if(authErrorBanner) authErrorBanner.classList.add("hidden");
-            const provider = new GoogleAuthProvider();
-            await signInWithPopup(auth, provider);
-            closeAuthModal();
-        } catch (err) {
-            showAuthErrorBanner("Google authentication failed. Please try again.");
-        }
-    });
-}
-
-if(emailAuthForm) {
-    emailAuthForm.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        if(authErrorBanner) authErrorBanner.classList.add("hidden");
-
-        const emailInput = document.getElementById("authEmailInput");
-        const passwordInput = document.getElementById("authPasswordInput");
-        const email = emailInput ? emailInput.value.trim() : "";
-        const password = passwordInput ? passwordInput.value : "";
-
-        if (!email || !password) {
-            showAuthErrorBanner("Please fill in all fields.");
-            return;
-        }
-
-        try {
-            if (isSignupMode) {
-                const confirmPassInput = document.getElementById("authConfirmPasswordInput");
-                const confirmPass = confirmPassInput ? confirmPassInput.value : "";
-                if (password !== confirmPass) {
-                    showAuthErrorBanner("Passwords do not match.");
-                    return;
-                }
-                await createUserWithEmailAndPassword(auth, email, password);
-            } else {
-                await signInWithEmailAndPassword(auth, email, password);
-            }
-            closeAuthModal();
-        } catch (err) {
-            showAuthErrorBanner(getFriendlyAuthErrorMessage(err.code));
-        }
-    });
-}
-
-function showAuthErrorBanner(msg) {
-    if(authErrorBanner) {
-        authErrorBanner.textContent = msg;
-        authErrorBanner.classList.remove("hidden");
-    }
-}
-
-function getFriendlyAuthErrorMessage(code) {
-    switch (code) {
-        case 'auth/invalid-email': return 'Please enter a valid email address.';
-        case 'auth/user-not-found': return 'No account found with this email.';
-        case 'auth/wrong-password': return 'Incorrect password. Please try again.';
-        case 'auth/email-already-in-use': return 'An account with this email already exists.';
-        case 'auth/weak-password': return 'Password should be at least 6 characters.';
-        default: return 'Authentication failed. Please check your credentials.';
-    }
-}
-
-// ================= 12. UTILITY & UI HELPERS =================
-function showLoadingState(isLoading) {
-    const skeleton = document.getElementById("loadingSkeleton");
-    const container = document.getElementById("productContainer");
-    const errorState = document.getElementById("errorState");
-
-    if(errorState) errorState.classList.add("hidden");
-    if (isLoading) {
-        if(skeleton) skeleton.classList.remove("hidden");
-        if(container) container.classList.add("hidden");
-    } else {
-        if(skeleton) skeleton.classList.add("hidden");
-        if(container) container.classList.remove("hidden");
-    }
-}
-
-function showErrorState(title, message, redirectUrl = "/all-product", showRetry = false) {
-    showLoadingState(false);
-    const productContainer = document.getElementById("productContainer");
-    if(productContainer) productContainer.classList.add("hidden");
-    
-    const errorState = document.getElementById("errorState");
-    if(!errorState) return;
-    
-    errorState.classList.remove("hidden");
-
-    const errTitle = document.getElementById("errorTitle");
-    const errMsg = document.getElementById("errorMessage");
-    if(errTitle) errTitle.textContent = title;
-    if(errMsg) errMsg.textContent = message;
-
-    const actionBtn = document.getElementById("errorActionBtn");
-    if(actionBtn) {
-        if (showRetry) {
-            actionBtn.textContent = "Try Again";
-            actionBtn.onclick = () => window.location.reload();
-            actionBtn.removeAttribute("href");
-        } else {
-            actionBtn.textContent = "Browse All Products";
-            actionBtn.href = redirectUrl;
-            actionBtn.onclick = null;
-        }
-    }
-}
-
-function showToastNotification(message) {
-    let existingToast = document.getElementById("toastNotification");
-    if (existingToast) existingToast.remove();
-
-    const toast = document.createElement("div");
-    toast.id = "toastNotification";
-    toast.style.cssText = `
-        position: fixed;
-        bottom: 80px;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: #111827;
-        color: #ffffff;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 14px;
-        z-index: 2000;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    `;
-    toast.textContent = message;
-    document.body.appendChild(toast);
-
-    setTimeout(() => {
-        if (toast) toast.remove();
-    }, 2500);
-}
-
-function updateMetaTag(attrName, attrValue, content) {
-    let element = document.querySelector(`meta[${attrName}="${attrValue}"]`);
-    if (element) {
-        element.setAttribute("content", content);
-    }
-}
-
-function injectStructuredData(name, image, description, sku, category) {
-    let scriptTag = document.getElementById("productStructuredData");
-    if (!scriptTag) {
-        scriptTag = document.createElement("script");
-        scriptTag.id = "productStructuredData";
-        scriptTag.type = "application/ld+json";
-        document.head.appendChild(scriptTag);
-    }
-
-    const unitPrice = calculateFinalUnitPrice();
-    const availability = (currentProduct && currentProduct.active) ? "https://schema.org/InStock" : "https://schema.org/OutOfStock";
-
-    const schemaObj = {
-        "@context": "https://schema.org/",
-        "@type": "Product",
-        "name": name,
-        "image": [image],
-        "description": description,
-        "sku": sku || "",
-        "category": category,
-        "brand": {
-            "@type": "Brand",
-            "name": "Gadgets Item"
-        },
-        "offers": {
-            "@type": "Offer",
-            "url": window.location.href,
-            "priceCurrency": "BDT",
-            "price": unitPrice,
-            "availability": availability
-        }
+    const newItem = {
+      productId: currentProduct.id,
+      productName: currentProduct.productName,
+      productSlug: currentProduct.productSlug,
+      productImage: currentProduct.productImage ? currentProduct.productImage[0] : '',
+      productPrice: basePrice,
+      selectedVariants: selectedVariants,
+      quantity: currentQuantity,
+      unitPrice: finalUnitPrice,
+      totalPrice: finalUnitPrice * currentQuantity,
+      SKU: currentProduct.SKU || '',
+      categoryId: currentProduct.categoryId || '',
+      freeDelivery: !!currentProduct.freeDelivery,
+      addedAt: new Date().toISOString()
     };
 
-    scriptTag.textContent = JSON.stringify(schemaObj);
+    items.push(newItem);
+
+    await setDoc(userCartRef, {
+      uid: currentUser.uid,
+      email: currentUser.email,
+      updatedAt: new Date().toISOString(),
+      items: items
+    }, { merge: true });
+
+    return false;
+  } catch (err) {
+    console.error("Cart save error:", err);
+    showToast("Failed to update cart. Please try again.");
+    return false;
+  }
 }
 
-function formatNumber(num) {
-    return Number(num).toLocaleString('en-BD');
-}
+// --- Google Sign-In ---
+async function handleGoogleLogin() {
+  try {
+    const result = await signInWithPopup(auth, googleProvider);
+    currentUser = result.user;
+    authModal.classList.add('hidden');
+    updateCartBadge();
 
-function escapeHtml(str) {
-    if (!str) return '';
-    return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
-function isValidHttpUrl(string) {
-    let url;
-    try {
-        url = new URL(string);
-    } catch (_) {
-        return false;
+    if (pendingAction) {
+      await processCartSaveAndNavigate();
     }
-    return url.protocol === "http:" || url.protocol === "https:";
+  } catch (error) {
+    console.error("Auth error:", error);
+    showToast("Sign in failed or was cancelled.");
+  }
 }
 
-function initUIEventListeners() {
-    // Additional UI event listeners can be attached here if needed
+// --- Firebase Auth Observer ---
+function setupAuthObserver() {
+  onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    if (user) {
+      updateCartBadge();
+    } else {
+      cartBadge.textContent = '0';
+    }
+  });
+}
+
+// --- Update Header Cart Quantity ---
+async function updateCartBadge() {
+  if (!currentUser) {
+    cartBadge.textContent = '0';
+    return;
+  }
+  try {
+    const docSnap = await getDoc(doc(db, "carts", currentUser.uid));
+    if (docSnap.exists() && docSnap.data().items) {
+      cartBadge.textContent = docSnap.data().items.length;
+    } else {
+      cartBadge.textContent = '0';
+    }
+  } catch (err) {
+    console.warn("Could not update badge:", err);
+  }
+}
+
+// --- Suggested Products Loader ---
+async function loadSuggestedProducts(categoryId, currentId = null) {
+  const grid = document.getElementById('suggestedGrid');
+  grid.innerHTML = '';
+
+  try {
+    let q = query(collection(db, "products"), where("active", "==", true), limit(8));
+    if (categoryId) {
+      q = query(collection(db, "products"), where("active", "==", true), where("categoryId", "==", categoryId), limit(8));
+    }
+
+    let querySnapshot = await getDocs(q);
+
+    // Fallback if category has no other active items
+    if (querySnapshot.empty && categoryId) {
+      q = query(collection(db, "products"), where("active", "==", true), limit(8));
+      querySnapshot = await getDocs(q);
+    }
+
+    querySnapshot.docs.forEach(docSnap => {
+      if (docSnap.id === currentId) return; // Exclude current product
+
+      const data = docSnap.data();
+      const card = document.createElement('a');
+      card.className = 'product-card';
+      card.href = `/gadgetitem/product?${data.productSlug}`;
+
+      const img = data.productImage && data.productImage[0] ? data.productImage[0] : 'https://ghotimarket.com/amrweb/banner1.png';
+
+      card.innerHTML = `
+        <div class="card-img-wrap">
+          <img src="${img}" alt="${escapeHTML(data.productName)}" loading="lazy">
+        </div>
+        <h3 class="card-name">${escapeHTML(data.productName)}</h3>
+        <div class="card-price-row">
+          <span class="card-price">৳${data.productPrice}</span>
+          ${data.oldPrice > data.productPrice ? `<span class="card-old-price">৳${data.oldPrice}</span>` : ''}
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  } catch (err) {
+    console.error("Suggested products error:", err);
+  }
+}
+
+// --- Dynamic SEO Updates ---
+function updateSEO(product) {
+  const title = `${product.productName} | Gadgeta Item`;
+  document.title = title;
+
+  const desc = product.productDescription ? product.productDescription.substring(0, 160) : "Buy high quality gadgets online at Gadgeta Item.";
+  const img = product.productImage && product.productImage[0] ? product.productImage[0] : 'https://ghotimarket.com/amrweb/banner1.png';
+  const url = window.location.href;
+
+  updateMetaTag('description', desc);
+  updateMetaTag('og:title', title, 'property');
+  updateMetaTag('og:description', desc, 'property');
+  updateMetaTag('og:image', img, 'property');
+  updateMetaTag('og:url', url, 'property');
+  updateMetaTag('twitter:title', title);
+  updateMetaTag('twitter:description', desc);
+  updateMetaTag('twitter:image', img);
+
+  // Dynamic JSON-LD Schema
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": product.productName,
+    "image": product.productImage || [img],
+    "description": desc,
+    "sku": product.SKU || "",
+    "offers": {
+      "@type": "Offer",
+      "priceCurrency": "BDT",
+      "price": product.productPrice,
+      "availability": "https://schema.org/InStock"
+    }
+  };
+  document.getElementById('product-schema').textContent = JSON.stringify(schema);
+}
+
+function updateMetaTag(name, content, attribute = 'name') {
+  let element = document.querySelector(`meta[${attribute}="${name}"]`);
+  if (element) {
+    element.setAttribute('content', content);
+  }
+}
+
+// --- Error/Status Card State Helper ---
+function showStatusState(title, message) {
+  skeletonLoader.classList.add('hidden');
+  productContent.classList.add('hidden');
+  statusCard.classList.remove('hidden');
+  statusIcon.innerHTML = SVG_ERROR;
+  statusTitle.textContent = title;
+  statusMessage.textContent = message;
+}
+
+// --- Toast Helper ---
+function showToast(msg) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+function escapeHTML(str) {
+  return String(str || '').replace(/[&<>"']/g, match => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[match]));
 }
