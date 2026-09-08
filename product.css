@@ -27,7 +27,7 @@ body {
   background-color: var(--bg-page);
   color: var(--text-main);
   line-height: 1.5;
-  padding-bottom: 70px; /* Space for mobile nav */
+  padding-bottom: 70px;
 }
 
 @media (min-width: 768px) {
@@ -490,6 +490,15 @@ button {
   background: var(--primary-light);
   color: var(--primary);
   border: 1px solid var(--primary);
+}
+
+/* Already added state styling */
+.btn.already-added {
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+  cursor: not-allowed;
+  opacity: 0.9;
 }
 
 .btn-inline {
