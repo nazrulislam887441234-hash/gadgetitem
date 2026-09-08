@@ -286,6 +286,37 @@ ul {
     }
 }
 
+/* Load More Button Container */
+.gi-load-more-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 35px;
+}
+
+.gi-load-more-btn {
+    padding: 12px 30px;
+    font-size: 0.95rem;
+    border-radius: 50px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    border: 2px solid var(--gi-primary);
+    color: var(--gi-primary);
+    background-color: transparent;
+    transition: var(--gi-transition);
+}
+
+.gi-load-more-btn:hover {
+    background-color: var(--gi-primary);
+    color: white;
+}
+
+.gi-load-more-btn svg {
+    width: 18px;
+    height: 18px;
+}
+
 /* Product Card */
 .gi-product-card {
     background-color: var(--gi-bg-card);
@@ -820,6 +851,25 @@ ul {
 
 @keyframes giSpin {
     to { transform: rotate(360deg); }
+}
+
+/* Button Loading Spinner for "Saving" */
+.gi-btn-loading {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    pointer-events: none;
+    opacity: 0.85;
+}
+
+.gi-btn-spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: giSpin 0.8s linear infinite;
 }
 
 /* Toast System */
