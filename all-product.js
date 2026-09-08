@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, doc, setDoc, getDoc, limit, orderBy, startAfter } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -17,13 +17,14 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
+// State Variables for Pagination & Infinite Scroll (20 items limit per batch)
 let allProducts = [];
 let filteredProducts = [];
 let renderedCount = 0;
 const BATCH_LIMIT = 20;
 let userCart = { items: [] };
 let currentUser = null;
-let pendingAction = null; 
+let pendingAction = null; // { type: 'cart'|'buynow', product, selectedVariants, quantity }
 let sliderIntervals = new Map();
 
 // DOM Elements
@@ -46,6 +47,7 @@ const productModal = document.getElementById('giProductModal');
 const closeProductModalBtn = document.getElementById('giCloseProductModalBtn');
 const modalBodyContent = document.getElementById('giModalBodyContent');
 
+// Safe HTML Escaping
 function escapeHTML(str) {
     if (!str) return '';
     return str.replace(/[&<>'"]/g, 
@@ -53,6 +55,13 @@ function escapeHTML(str) {
     );
 }
 
+// Generate Slug Helper
+function generateSlug(name) {
+    if (!name) return 'product';
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
+}
+
+// Toast Notification System
 function showToast(message, type = 'default') {
     const toast = document.createElement('div');
     toast.className = `gi-toast ${type}`;
@@ -75,6 +84,7 @@ function showToast(message, type = 'default') {
     }, 3500);
 }
 
+// Authentication & Cart Sync
 onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     if (user) {
@@ -103,11 +113,22 @@ async function fetchUserCart() {
     updateCartBadgeCount();
 }
 
+async function saveUserCart() {
+    if (!currentUser) return;
+    try {
+        const cartDocRef = doc(db, "carts", currentUser.uid);
+        await setDoc(cartDocRef, userCart, { merge: true });
+    } catch (error) {
+        console.error("Error saving cart:", error);
+    }
+}
+
 function updateCartBadgeCount() {
     const count = userCart.items ? userCart.items.length : 0;
     cartBadge.textContent = count;
 }
 
+// Fetch Products from Firestore
 async function loadProducts() {
     productGrid.style.display = 'grid';
     errorState.style.display = 'none';
@@ -131,6 +152,7 @@ async function loadProducts() {
     }
 }
 
+// Populate Category Filter Options
 function populateCategories() {
     const categoriesMap = new Map();
     allProducts.forEach(product => {
@@ -148,6 +170,7 @@ function populateCategories() {
     });
 }
 
+// Filtering & Sorting Logic
 function filterAndSortProducts() {
     const searchTerm = (searchInput.value || mobileSearchInput.value || '').toLowerCase().trim();
     const selectedCategory = categoryFilter.value;
@@ -195,11 +218,13 @@ function filterAndSortProducts() {
     renderProducts(true);
 }
 
+// Clear Sliders Cleanup
 function clearAllSliders() {
     sliderIntervals.forEach(interval => clearInterval(interval));
     sliderIntervals.clear();
 }
 
+// Render Products Grid with Batch Limit
 function renderProducts(reset = false) {
     if (reset) {
         clearAllSliders();
@@ -225,6 +250,7 @@ function renderProducts(reset = false) {
     renderedCount += nextBatch.length;
 }
 
+// Infinite Scroll Event
 window.addEventListener('scroll', () => {
     if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 300) {
         if (renderedCount < filteredProducts.length) {
@@ -233,6 +259,68 @@ window.addEventListener('scroll', () => {
     }
 });
 
+// Add Item to Cart Functionality
+async function handleAddToCart(product, selectedVariants, quantity) {
+    if (!currentUser) {
+        pendingAction = { type: 'cart', product, selectedVariants, quantity };
+        authModal.style.display = 'flex';
+        return;
+    }
+
+    const cartItem = {
+        productId: product.id,
+        productName: product.productName,
+        productPrice: product.productPrice,
+        selectedVariants: selectedVariants || {},
+        quantity: quantity || 1,
+        image: (product.productImage && product.productImage[0]) ? product.productImage[0] : ''
+    };
+
+    const existingIndex = userCart.items.findIndex(item => item.productId === product.id);
+    if (existingIndex > -1) {
+        userCart.items[existingIndex] = cartItem;
+    } else {
+        userCart.items.push(cartItem);
+    }
+
+    updateCartBadgeCount();
+    await saveUserCart();
+    showToast("This Product already added from cart!", "success");
+    closeProductModal();
+    renderProducts(true);
+}
+
+// Buy Now Functionality (Adds to cart if not present, then goes to /checkout)
+async function handleBuyNow(product, selectedVariants, quantity) {
+    if (!currentUser) {
+        pendingAction = { type: 'buynow', product, selectedVariants, quantity };
+        authModal.style.display = 'flex';
+        return;
+    }
+
+    const cartItem = {
+        productId: product.id,
+        productName: product.productName,
+        productPrice: product.productPrice,
+        selectedVariants: selectedVariants || {},
+        quantity: quantity || 1,
+        image: (product.productImage && product.productImage[0]) ? product.productImage[0] : ''
+    };
+
+    const existingIndex = userCart.items.findIndex(item => item.productId === product.id);
+    if (existingIndex > -1) {
+        userCart.items[existingIndex] = cartItem;
+    } else {
+        userCart.items.push(cartItem);
+    }
+
+    updateCartBadgeCount();
+    await saveUserCart();
+    closeProductModal();
+    window.location.href = '/checkout';
+}
+
+// Create Product Card DOM Element
 function createProductCard(product) {
     const card = document.createElement('div');
     card.className = 'gi-product-card';
@@ -245,6 +333,7 @@ function createProductCard(product) {
         : ['https://ghotimarket.com/amrweb/banner1.png'];
 
     const primaryImage = images[0];
+    const productSlug = product.slug || generateSlug(product.productName);
 
     const basePrice = product.productPrice || 0;
     const oldPrice = product.oldPrice || 0;
@@ -256,25 +345,8 @@ function createProductCard(product) {
         percent = Math.round((saved / oldPrice) * 100);
     }
 
-    // শর্ত ১ ও ৩ অনুযায়ী: কার্টে যোগ করা থাকলে Add to cart লুকাবে বা দেখাবে না, শুধু Buy Now থাকবে
-    const cardActionsHTML = isAlreadyInCart ? `
-        <button class="gi-btn gi-btn-primary buy-now-direct-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            <span>Buy Now</span>
-        </button>
-    ` : `
-        <button class="gi-btn gi-btn-outline add-to-cart-card-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-            <span>Add to cart</span>
-        </button>
-        <button class="gi-btn gi-btn-primary buy-now-card-btn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            <span>Buy Now</span>
-        </button>
-    `;
-
     const cardHTML = `
-        <div class="gi-card-img-container product-click-target">
+        <div class="gi-card-img-container" data-action="detail" data-slug="${escapeHTML(productSlug)}">
             <img src="${escapeHTML(primaryImage)}" alt="${escapeHTML(product.productName)}" class="gi-card-img" id="img-${product.id}" loading="lazy" onerror="this.src='https://ghotimarket.com/amrweb/banner1.png'">
             <div class="gi-badge-wrapper">
                 ${hasDiscount ? `<span class="gi-badge discount">${percent}% OFF</span>` : ''}
@@ -283,9 +355,9 @@ function createProductCard(product) {
             </div>
         </div>
         <div class="gi-card-content">
-            <h3 class="gi-product-title product-click-target">${escapeHTML(product.productName)}</h3>
+            <h3 class="gi-product-title" data-action="detail" data-slug="${escapeHTML(productSlug)}">${escapeHTML(product.productName)}</h3>
             
-            <div class="gi-pricing-area product-click-target">
+            <div class="gi-pricing-area">
                 <div class="gi-price-row">
                     <span class="gi-current-price">৳${basePrice.toLocaleString()}</span>
                     ${hasDiscount ? `<span class="gi-old-price">৳${oldPrice.toLocaleString()}</span>` : ''}
@@ -294,13 +366,34 @@ function createProductCard(product) {
             </div>
 
             <div class="gi-card-actions">
-                ${cardActionsHTML}
+                ${isAlreadyInCart ? 
+                    `
+                    <div class="gi-cart-status">This product already added from cart</div>
+                    <button class="gi-btn gi-btn-primary buy-now-direct-btn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <span>Buy Now</span>
+                    </button>
+                    ` :
+                    `
+                    <div class="gi-card-action-row">
+                        <button class="gi-btn gi-btn-outline add-to-cart-card-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                            <span>Add to Cart</span>
+                        </button>
+                        <button class="gi-btn gi-btn-primary buy-now-card-btn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            <span>Buy Now</span>
+                        </button>
+                    </div>
+                    `
+                }
             </div>
         </div>
     `;
 
     card.innerHTML = cardHTML;
 
+    // Image Auto Slider Setup
     if (images.length > 1) {
         let currentImgIdx = 0;
         const imgElement = card.querySelector(`#img-${product.id}`);
@@ -316,66 +409,46 @@ function createProductCard(product) {
         sliderIntervals.set(product.id, intervalId);
     }
 
-    // শর্ত ৬ অনুযায়ী: প্রোডাক্টে ক্লিক করলে product?slug অর্থাৎ product?i-phone-এ রিডাইরেক্ট করবে
-    card.querySelectorAll('.product-click-target').forEach(el => {
+    // Specific Click Listeners to prevent whole card misclicks
+    const detailTriggers = card.querySelectorAll('[data-action="detail"]');
+    detailTriggers.forEach(el => {
         el.addEventListener('click', (e) => {
             e.stopPropagation();
-            const slug = product.productSlug || product.id;
-            window.location.href = `product?${slug}`;
+            window.location.href = `product?slug=${productSlug}`;
         });
     });
 
-    // Add to Cart Button Click (শرت ৪)
-    const addToCartBtn = card.querySelector('.add-to-cart-card-btn');
-    if (addToCartBtn) {
-        addToCartBtn.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            if (product.variants && product.variants.length > 0) {
-                openProductPopup(product, isAlreadyInCart);
-                return;
-            }
-            if (!currentUser) {
-                pendingAction = { type: 'cart', product, selectedVariants: {}, quantity: 1 };
-                authModal.style.display = 'flex';
-                return;
-            }
-            await executeAddToCart(product, {}, 1);
-        });
-    }
+    if (isAlreadyInCart) {
+        const buyNowDirectBtn = card.querySelector('.buy-now-direct-btn');
+        if (buyNowDirectBtn) {
+            buyNowDirectBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.location.href = '/checkout';
+            });
+        }
+    } else {
+        const addToCartCardBtn = card.querySelector('.add-to-cart-card-btn');
+        if (addToCartCardBtn) {
+            addToCartCardBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openProductPopup(product, false, 'cart');
+            });
+        }
 
-    // Direct Buy Now Button Click (শর্ত ৩ ও ৫)
-    const buyNowDirectBtn = card.querySelector('.buy-now-direct-btn');
-    if (buyNowDirectBtn) {
-        buyNowDirectBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            window.location.href = '/checkout';
-        });
-    }
-
-    const buyNowCardBtn = card.querySelector('.buy-now-card-btn');
-    if (buyNowCardBtn) {
-        buyNowCardBtn.addEventListener('click', async (e) => {
-            e.stopPropagation();
-            if (product.variants && product.variants.length > 0) {
-                openProductPopup(product, isAlreadyInCart);
-                return;
-            }
-            if (!currentUser) {
-                pendingAction = { type: 'buynow', product, selectedVariants: {}, quantity: 1, isAlreadyInCart };
-                authModal.style.display = 'flex';
-                return;
-            }
-            if (!isAlreadyInCart) {
-                await executeAddToCart(product, {}, 1, false);
-            }
-            window.location.href = '/checkout';
-        });
+        const buyNowCardBtn = card.querySelector('.buy-now-card-btn');
+        if (buyNowCardBtn) {
+            buyNowCardBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                openProductPopup(product, false, 'buynow');
+            });
+        }
     }
 
     return card;
 }
 
-function openProductPopup(product, isAlreadyInCart) {
+// Open Professional Popup Modal containing variants selection
+function openProductPopup(product, isAlreadyInCart, initialIntent = 'cart') {
     const basePrice = product.productPrice || 0;
     const oldPrice = product.oldPrice || 0;
     const hasDiscount = oldPrice > basePrice;
@@ -425,24 +498,6 @@ function openProductPopup(product, isAlreadyInCart) {
         });
     }
 
-    // শর্ত ১ ও ৩ অনুযায়ী পপআপের ভেতরেও বাটন সেটআপ
-    const modalActionsHTML = isAlreadyInCart ? `
-        <div class="gi-cart-status">This product already added from cart</div>
-        <button class="gi-btn gi-btn-primary" id="popupBuyNowBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            <span>Buy Now</span>
-        </button>
-    ` : `
-        <button class="gi-btn gi-btn-outline" id="popupAddToCartBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-            <span>Add to Cart</span>
-        </button>
-        <button class="gi-btn gi-btn-primary" id="popupBuyNowBtn">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            <span>Buy Now</span>
-        </button>
-    `;
-
     modalBodyContent.innerHTML = `
         <h2 class="gi-popup-product-title">${escapeHTML(product.productName)}</h2>
         ${product.productDescription ? `<p class="gi-popup-desc">${escapeHTML(product.productDescription)}</p>` : ''}
@@ -477,7 +532,27 @@ function openProductPopup(product, isAlreadyInCart) {
         <div class="gi-validation-msg" id="popupValidationMsg"></div>
 
         <div class="gi-card-actions">
-            ${modalActionsHTML}
+            ${isAlreadyInCart ? 
+                `
+                <div class="gi-cart-status">This product already added from cart</div>
+                <button class="gi-btn gi-btn-primary" id="popupBuyNowDirectBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <span>Buy Now</span>
+                </button>
+                ` :
+                `
+                <div class="gi-card-action-row">
+                    <button class="gi-btn gi-btn-outline" id="popupAddToCartBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                        <span>Add to Cart</span>
+                    </button>
+                    <button class="gi-btn gi-btn-primary" id="popupBuyNowBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                        <span>Buy Now</span>
+                    </button>
+                </div>
+                `
+            }
         </div>
     `;
 
@@ -513,152 +588,96 @@ function openProductPopup(product, isAlreadyInCart) {
         qtyDisplayEl.textContent = currentQuantity;
     });
 
-    const popupAddToCartBtn = document.getElementById('popupAddToCartBtn');
-    if (popupAddToCartBtn) {
-        popupAddToCartBtn.addEventListener('click', async () => {
-            if (!validatePopupVariants(product, selectedVariants)) return;
-            if (!currentUser) {
-                pendingAction = { type: 'cart', product, selectedVariants, quantity: currentQuantity };
-                productModal.style.display = 'none';
-                authModal.style.display = 'flex';
-                return;
-            }
-            await executeAddToCart(product, selectedVariants, currentQuantity);
-            productModal.style.display = 'none';
-        });
+    if (isAlreadyInCart) {
+        const buyNowDirectBtn = document.getElementById('popupBuyNowDirectBtn');
+        if (buyNowDirectBtn) {
+            buyNowDirectBtn.addEventListener('click', () => {
+                closeProductModal();
+                window.location.href = '/checkout';
+            });
+        }
+    } else {
+        const addToCartBtn = document.getElementById('popupAddToCartBtn');
+        if (addToCartBtn) {
+            addToCartBtn.addEventListener('click', () => {
+                handleAddToCart(product, selectedVariants, currentQuantity);
+            });
+        }
+
+        const buyNowBtn = document.getElementById('popupBuyNowBtn');
+        if (buyNowBtn) {
+            buyNowBtn.addEventListener('click', () => {
+                handleBuyNow(product, selectedVariants, currentQuantity);
+            });
+        }
     }
-
-    document.getElementById('popupBuyNowBtn').addEventListener('click', async () => {
-        if (!isAlreadyInCart) {
-            if (!validatePopupVariants(product, selectedVariants)) return;
-        }
-        if (!currentUser) {
-            pendingAction = { type: 'buynow', product, selectedVariants, quantity: currentQuantity, isAlreadyInCart };
-            productModal.style.display = 'none';
-            authModal.style.display = 'flex';
-            return;
-        }
-
-        if (!isAlreadyInCart) {
-            await executeAddToCart(product, selectedVariants, currentQuantity, false);
-        }
-        window.location.href = '/checkout';
-    });
 
     productModal.style.display = 'flex';
 }
 
-function validatePopupVariants(product, selectedVariants) {
-    if (product.variants && Array.isArray(product.variants) && product.variants.length > 0) {
-        for (let group of product.variants) {
-            if (!selectedVariants[group.name]) {
-                document.getElementById('popupValidationMsg').textContent = 'Please select all required options.';
-                return false;
-            }
-        }
-    }
-    return true;
+function closeProductModal() {
+    productModal.style.display = 'none';
 }
 
-async function executeAddToCart(product, selectedVariants, quantity, showSuccessToast = true) {
-    try {
-        const existingIndex = userCart.items.findIndex(item => item.productId === product.id);
-        if (existingIndex > -1) {
-            // শর্ত ২ ও ৪ অনুযায়ী নির্দিষ্ট টেক্সট
-            showToast('This product already added from cart', 'error');
-            return;
-        }
+closeProductModalBtn.addEventListener('click', closeProductModal);
+productModal.addEventListener('click', (e) => {
+    if (e.target === productModal) closeProductModal();
+});
 
-        let extraPriceSum = 0;
-        Object.keys(selectedVariants).forEach(key => {
-            extraPriceSum += selectedVariants[key].extraPrice || 0;
-        });
-
-        const finalUnitPrice = (product.productPrice || 0) + extraPriceSum;
-
-        const newItem = {
-            productId: product.id,
-            productName: product.productName,
-            productSlug: product.productSlug,
-            productImage: product.productImage ? product.productImage[0] : '',
-            productPrice: product.productPrice || 0,
-            selectedVariants: selectedVariants,
-            quantity: quantity,
-            unitPrice: finalUnitPrice,
-            totalPrice: finalUnitPrice * quantity,
-            SKU: product.SKU || '',
-            categoryId: product.categoryId || '',
-            freeDelivery: !!product.freeDelivery,
-            uid: currentUser.uid,
-            email: currentUser.email,
-            addedAt: new Date().toISOString()
-        };
-
-        userCart.items.push(newItem);
-
-        const cartRef = doc(db, "carts", currentUser.uid);
-        await setDoc(cartRef, {
-            uid: currentUser.uid,
-            email: currentUser.email,
-            updatedAt: new Date().toISOString(),
-            items: userCart.items
-        }, { merge: true });
-
-        updateCartBadgeCount();
-        if (showSuccessToast) {
-            // শর্ত ২ ও ৪ অনুযায়ী সফল মেসেজ
-            showToast('This product already added from cart!', 'success');
-        }
-        renderProducts(true);
-    } catch (error) {
-        console.error("Error adding to cart:", error);
-        showToast('Something went wrong. Please try again.', 'error');
-    }
+// Event Listeners for Search & Filter Controls
+if (searchInput) {
+    searchInput.addEventListener('input', filterAndSortProducts);
+}
+if (mobileSearchInput) {
+    mobileSearchInput.addEventListener('input', filterAndSortProducts);
+}
+if (categoryFilter) {
+    categoryFilter.addEventListener('change', filterAndSortProducts);
+}
+if (freeDeliveryFilter) {
+    freeDeliveryFilter.addEventListener('change', filterAndSortProducts);
+}
+if (sortSelect) {
+    sortSelect.addEventListener('change', filterAndSortProducts);
+}
+if (retryBtn) {
+    retryBtn.addEventListener('click', loadProducts);
 }
 
+// Google Login Modal Controls
 googleLoginBtn.addEventListener('click', async () => {
     authLoading.style.display = 'flex';
     googleLoginBtn.style.display = 'none';
-
     try {
         const result = await signInWithPopup(auth, googleProvider);
         currentUser = result.user;
         await fetchUserCart();
         authModal.style.display = 'none';
-        showToast('Signed in successfully.', 'success');
+        showToast("Successfully signed in!", "success");
 
         if (pendingAction) {
-            const { type, product, selectedVariants, quantity, isAlreadyInCart } = pendingAction;
+            const { type, product, selectedVariants, quantity } = pendingAction;
             pendingAction = null;
             if (type === 'cart') {
-                await executeAddToCart(product, selectedVariants, quantity);
+                await handleAddToCart(product, selectedVariants, quantity);
             } else if (type === 'buynow') {
-                if (!isAlreadyInCart) {
-                    await executeAddToCart(product, selectedVariants, quantity, false);
-                }
-                window.location.href = '/checkout';
+                await handleBuyNow(product, selectedVariants, quantity);
             }
         }
     } catch (error) {
-        console.error("Login failed:", error);
-        showToast('Sign in failed or was cancelled.', 'error');
+        console.error("Auth error:", error);
+        showToast("Authentication failed. Please try again.", "error");
     } finally {
         authLoading.style.display = 'none';
         googleLoginBtn.style.display = 'flex';
     }
 });
 
-closeProductModalBtn.addEventListener('click', () => {
-    productModal.style.display = 'none';
-});
-productModal.addEventListener('click', (e) => {
-    if (e.target === productModal) productModal.style.display = 'none';
-});
-
 closeModalBtn.addEventListener('click', () => {
     authModal.style.display = 'none';
     pendingAction = null;
 });
+
 authModal.addEventListener('click', (e) => {
     if (e.target === authModal) {
         authModal.style.display = 'none';
@@ -666,27 +685,5 @@ authModal.addEventListener('click', (e) => {
     }
 });
 
-let searchTimeout;
-function handleSearchInput() {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-        filterAndSortProducts();
-    }, 300);
-}
-
-searchInput.addEventListener('input', (e) => {
-    mobileSearchInput.value = e.target.value;
-    handleSearchInput();
-});
-
-mobileSearchInput.addEventListener('input', (e) => {
-    searchInput.value = e.target.value;
-    handleSearchInput();
-});
-
-categoryFilter.addEventListener('change', filterAndSortProducts);
-freeDeliveryFilter.addEventListener('change', filterAndSortProducts);
-sortSelect.addEventListener('change', filterAndSortProducts);
-retryBtn.addEventListener('click', loadProducts);
-
+// Initial Load Execution
 loadProducts();
