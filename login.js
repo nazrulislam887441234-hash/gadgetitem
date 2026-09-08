@@ -1,546 +1,338 @@
-:root {
-    --gi-primary: #0066ff;
-    --gi-primary-dark: #004dcc;
-    --gi-primary-light: #e6f0ff;
-    --gi-text: #10213f;
-    --gi-muted: #667085;
-    --gi-background: #ffffff;
-    --gi-surface: #f7faff;
-    --gi-border: #e5edf8;
-    --gi-shadow: 0 4px 20px rgba(0, 102, 255, 0.06);
-    --gi-radius: 12px;
-    --gi-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --gi-danger: #d92d20;
-    --gi-danger-light: #fef3f2;
-    --gi-success: #039855;
-    --gi-success-light: #ecfdf3;
-}
-
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-body {
-    font-family: 'Outfit', 'Hind Siliguri', sans-serif;
-    background-color: var(--gi-surface);
-    color: var(--gi-text);
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    -webkit-font-smoothing: antialiased;
-}
-
-/* Header Styles */
-.gi-header {
-    background: var(--gi-background);
-    border-bottom: 1px solid var(--gi-border);
-    position: sticky;
-    top: 0;
-    z-index: 100;
-}
-
-.gi-header-container {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding: 12px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.gi-logo-link {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    text-decoration: none;
-}
-
-.gi-brand-logo {
-    height: 36px;
-    width: auto;
-    object-fit: contain;
-}
-
-.gi-brand-text {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--gi-text);
-}
-
-.gi-watermark-icon {
-    height: 24px;
-    opacity: 0.6;
-    object-fit: contain;
-}
-
-/* Main Content Layout */
-.gi-main-content {
-    flex: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 40px 16px;
-}
-
-.gi-auth-container {
-    width: 100%;
-    max-width: 960px;
-}
-
-.gi-auth-card {
-    background: var(--gi-background);
-    border-radius: var(--gi-radius);
-    box-shadow: var(--gi-shadow);
-    border: 1px solid var(--gi-border);
-    display: grid;
-    grid-template-columns: 1fr 1.2fr;
-    overflow: hidden;
-}
-
-/* Left Side Branding Banner */
-.gi-auth-banner {
-    background: linear-gradient(135deg, #004dcc 0%, #0066ff 100%);
-    color: #ffffff;
-    padding: 48px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    position: relative;
-    overflow: hidden;
-}
-
-.gi-banner-content {
-    position: relative;
-    z-index: 2;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    justify-content: center;
-}
-
-.gi-banner-watermark-wrap {
-    margin-bottom: 24px;
-}
-
-.gi-banner-watermark {
-    height: 48px;
-    filter: brightness(0) invert(1);
-    opacity: 0.9;
-}
-
-.gi-auth-banner h2 {
-    font-size: 1.75rem;
-    font-weight: 700;
-    margin-bottom: 16px;
-    line-height: 1.2;
-}
-
-.gi-auth-banner p {
-    font-size: 0.95rem;
-    opacity: 0.85;
-    line-height: 1.5;
-}
-
-.gi-abstract-shape {
-    position: absolute;
-    width: 200px;
-    height: 200px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 50%;
-    bottom: -50px;
-    right: -50px;
-    pointer-events: none;
-}
-
-/* Right Side Forms Wrapper */
-.gi-auth-forms-wrapper {
-    padding: 40px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-.gi-form-header {
-    margin-bottom: 24px;
-}
-
-.gi-form-header h1 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--gi-text);
-    margin-bottom: 6px;
-}
-
-.gi-form-header p {
-    font-size: 0.875rem;
-    color: var(--gi-muted);
-}
-
-/* Input Elements */
-.gi-input-group {
-    margin-bottom: 18px;
-    display: flex;
-    flex-direction: column;
-}
-
-.gi-input-group label {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    margin-bottom: 6px;
-    color: var(--gi-text);
-}
-
-.gi-input-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-}
-
-.gi-input-icon {
-    position: absolute;
-    left: 14px;
-    width: 18px;
-    height: 18px;
-    color: var(--gi-muted);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-}
-
-.gi-input-icon svg {
-    width: 100%;
-    height: 100%;
-}
-
-.gi-input-wrapper input {
-    width: 100%;
-    padding: 12px 16px 12px 42px;
-    border: 1px solid var(--gi-border);
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 0.9375rem;
-    color: var(--gi-text);
-    background: var(--gi-background);
-    transition: var(--gi-transition);
-}
-
-.gi-input-wrapper input:focus {
-    outline: none;
-    border-color: var(--gi-primary);
-    box-shadow: 0 0 0 3px var(--gi-primary-light);
-}
-
-.gi-password-toggle {
-    position: absolute;
-    right: 12px;
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--gi-muted);
-    display: flex;
-    align-items: center;
-    padding: 4px;
-}
-
-.gi-password-toggle svg {
-    width: 18px;
-    height: 18px;
-}
-
-.gi-field-error {
-    font-size: 0.75rem;
-    color: var(--gi-danger);
-    margin-top: 4px;
-    display: none;
-}
-
-.gi-field-error.visible {
-    display: block;
-}
-
-/* Actions & Buttons */
-.gi-form-actions-row {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 20px;
-}
-
-.gi-text-btn {
-    background: none;
-    border: none;
-    color: var(--gi-primary);
-    font-size: 0.8125rem;
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-}
-
-.gi-text-btn:hover {
-    text-decoration: underline;
-}
-
-.gi-btn {
-    width: 100%;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-family: inherit;
-    font-size: 0.9375rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    transition: var(--gi-transition);
-    border: none;
-}
-
-.gi-btn-primary {
-    background: var(--gi-primary);
-    color: #ffffff;
-}
-
-.gi-btn-primary:hover:not(:disabled) {
-    background: var(--gi-primary-dark);
-}
-
-.gi-btn-secondary {
-    background: var(--gi-background);
-    color: var(--gi-text);
-    border: 1px solid var(--gi-border);
-}
-
-.gi-btn-secondary:hover:not(:disabled) {
-    background: var(--gi-surface);
-    border-color: var(--gi-muted);
-}
-
-.gi-btn:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-}
-
-/* Spinner Loader Animation */
-.gi-spinner {
-    width: 16px;
-    height: 16px;
-    animation: gi-spin 0.8s linear infinite;
-}
-
-@keyframes gi-spin {
-    to { transform: rotate(360deg); }
-}
-
-/* Dividers & Mode Switch */
-.gi-divider {
-    display: flex;
-    align-items: center;
-    text-align: center;
-    margin: 20px 0;
-    color: var(--gi-muted);
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-}
-
-.gi-divider::before,
-.gi-divider::after {
-    content: '';
-    flex: 1;
-    border-bottom: 1px solid var(--gi-border);
-}
-
-.gi-divider span {
-    padding: 0 12px;
-}
-
-.gi-switch-auth-mode {
-    margin-top: 24px;
-    text-align: center;
-    font-size: 0.875rem;
-    color: var(--gi-muted);
-}
-
-.gi-text-link {
-    background: none;
-    border: none;
-    color: var(--gi-primary);
-    font-weight: 600;
-    cursor: pointer;
-    font-family: inherit;
-    font-size: inherit;
-}
-
-.gi-text-link:hover {
-    text-decoration: underline;
-}
-
-/* Alert Boxes */
-.gi-alert-box {
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 0.8125rem;
-    margin-bottom: 16px;
-    line-height: 1.4;
-}
-
-.gi-alert-error {
-    background-color: var(--gi-danger-light);
-    color: var(--gi-danger);
-    border: 1px solid rgba(217, 45, 32, 0.2);
-}
-
-.gi-alert-success {
-    background-color: var(--gi-success-light);
-    color: var(--gi-success);
-    border: 1px solid rgba(3, 152, 85, 0.2);
-}
-
-/* Footer Section Exact Preservation */
-.tj-footer {
-    background: #0d1b32;
-    color: #ffffff;
-    padding: 48px 24px 24px;
-    margin-top: auto;
-}
-
-.tj-footer-container {
-    max-width: 1280px;
-    margin: 0 auto;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 32px;
-    margin-bottom: 32px;
-}
-
-.tj-footer-brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 12px;
-}
-
-.tj-footer-logo {
-    height: 30px;
-}
-
-.tj-footer-brand span {
-    font-size: 1.125rem;
-    font-weight: 700;
-}
-
-.tj-footer-desc {
-    font-size: 0.8125rem;
-    color: #94a3b8;
-    line-height: 1.5;
-}
-
-.tj-footer-col h4 {
-    font-size: 0.9375rem;
-    font-weight: 600;
-    margin-bottom: 16px;
-    color: #ffffff;
-}
-
-.tj-footer-col ul {
-    list-style: none;
-}
-
-.tj-footer-col ul li {
-    margin-bottom: 10px;
-}
-
-.tj-footer-col ul li a,
-.tj-footer-col p {
-    font-size: 0.8125rem;
-    color: #94a3b8;
-    text-decoration: none;
-    transition: color 0.2s;
-}
-
-.tj-footer-col ul li a:hover {
-    color: var(--gi-primary);
-}
-
-.tj-footer-bottom {
-    max-width: 1280px;
-    margin: 0 auto;
-    padding-top: 24px;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    text-align: center;
-    font-size: 0.75rem;
-    color: #64748b;
-}
-
-/* Mobile Bottom Navigation Visibility Rules */
-.gi-mobile-bottom-nav {
-    display: none;
-}
-
-@media (max-width: 768px) {
-    .gi-mobile-bottom-nav {
-        display: flex;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 60px;
-        background: var(--gi-background);
-        border-top: 1px solid var(--gi-border);
-        z-index: 1000;
-        justify-content: space-around;
-        align-items: center;
-        box-shadow: 0 -4px 12px rgba(0,0,0,0.05);
+/**
+ * ==========================================
+ * GADGETA ITEM - AUTHENTICATION LOGIC JS
+ * ==========================================
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. REUSE EXISTING FIREBASE CONFIGURATION OR INITIALIZE SAFELY
+    // Note: Reusing exact project setup. Replace config details if not auto-injected by host platform environment.
+    const firebaseConfig = {
+  apiKey: "AIzaSyBEZA5iQBxOUJaKvFMtpVi6w-jMATNESoA",
+  authDomain: "gadget-item.firebaseapp.com",
+  projectId: "gadget-item",
+  storageBucket: "gadget-item.firebasestorage.app",
+  messagingSenderId: "1048854789116",
+  appId: "1:1048854789116:web:91c20aa6dd633815be5079",
+  measurementId: "G-2YMX097PSJ"
+};
+
+
+    if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
     }
 
-    .gi-mob-nav-item {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-decoration: none;
-        color: var(--gi-muted);
-        font-size: 0.625rem;
-        font-weight: 600;
-        gap: 4px;
-        flex: 1;
+    const auth = firebase.auth();
+
+    // 2. DOM REFERENCES
+    const loginSection = document.getElementById('gi-login-section');
+    const signupSection = document.getElementById('gi-signup-section');
+    const forgotSection = document.getElementById('gi-forgot-section');
+
+    // Switch triggers
+    const toSignupBtn = document.getElementById('gi-to-signup-btn');
+    const toLoginBtn = document.getElementById('gi-to-login-btn');
+    const forgotPwdTrigger = document.getElementById('gi-forgot-pwd-trigger');
+    const backToLoginBtn = document.getElementById('gi-back-to-login-btn');
+
+    // Forms
+    const loginForm = document.getElementById('gi-login-form');
+    const signupForm = document.getElementById('gi-signup-form');
+    const forgotForm = document.getElementById('gi-forgot-form');
+
+    // Google Buttons
+    const googleLoginBtn = document.getElementById('gi-google-login-btn');
+    const googleSignupBtn = document.getElementById('gi-google-signup-btn');
+
+    // 3. AUTH STATE LISTENER (Redirect if already logged in)
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            // Respect existing project routing convention (/profile)
+            window.location.href = '/profile';
+        }
+    });
+
+    // 4. MODE SWITCHING FUNCTIONS (No Page Reload)
+    function switchMode(targetSection) {
+        [loginSection, signupSection, forgotSection].forEach(section => {
+            section.style.display = 'none';
+            section.classList.remove('active');
+        });
+        targetSection.style.display = 'block';
+        setTimeout(() => targetSection.classList.add('active'), 10);
+        clearAllAlerts();
     }
 
-    .gi-mob-nav-item svg {
-        width: 20px;
-        height: 20px;
+    toSignupBtn.addEventListener('click', () => switchMode(signupSection));
+    toLoginBtn.addEventListener('click', () => switchMode(loginSection));
+    forgotPwdTrigger.addEventListener('click', () => switchMode(forgotSection));
+    backToLoginBtn.addEventListener('click', () => switchMode(loginSection));
+
+    // 5. PASSWORD VISIBILITY TOGGLE
+    function setupPasswordToggle(toggleId, inputId) {
+        const toggleBtn = document.getElementById(toggleId);
+        const inputField = document.getElementById(inputId);
+        if (!toggleBtn || !inputField) return;
+
+        const eyeIcon = toggleBtn.querySelector('.gi-eye-icon');
+        const eyeOffIcon = toggleBtn.querySelector('.gi-eye-off-icon');
+
+        toggleBtn.addEventListener('click', () => {
+            const isPassword = inputField.type === 'password';
+            inputField.type = isPassword ? 'text' : 'password';
+            
+            if (isPassword) {
+                eyeIcon.style.display = 'none';
+                eyeOffIcon.style.display = 'block';
+                toggleBtn.setAttribute('aria-label', 'Hide password');
+            } else {
+                eyeIcon.style.display = 'block';
+                eyeOffIcon.style.display = 'none';
+                toggleBtn.setAttribute('aria-label', 'Show password');
+            }
+        });
     }
 
-    .gi-mob-nav-item.active,
-    .gi-mob-nav-item:hover {
-        color: var(--gi-primary);
+    setupPasswordToggle('gi-login-pwd-toggle', 'gi-login-password');
+    setupPasswordToggle('gi-signup-pwd-toggle', 'gi-signup-password');
+    setupPasswordToggle('gi-signup-confirm-pwd-toggle', 'gi-signup-confirm-password');
+
+    // 6. HELPER UTILITIES: ALERTS & LOADING
+    function showAlert(type, message, prefix = 'login') {
+        const errBox = document.getElementById(`gi-${prefix}-error`);
+        const succBox = document.getElementById(`gi-${prefix}-success`);
+        
+        clearAlerts(prefix);
+
+        if (type === 'error' && errBox) {
+            errBox.textContent = message;
+            errBox.style.display = 'block';
+        } else if (type === 'success' && succBox) {
+            succBox.textContent = message;
+            succBox.style.display = 'block';
+        }
     }
 
-    /* Extra padding at bottom to clear mobile navigation bar */
-    body {
-        padding-bottom: 60px;
+    function clearAlerts(prefix) {
+        const errBox = document.getElementById(`gi-${prefix}-error`);
+        const succBox = document.getElementById(`gi-${prefix}-success`);
+        if (errBox) errBox.style.display = 'none';
+        if (succBox) succBox.style.display = 'none';
     }
 
-    .gi-auth-card {
-        grid-template-columns: 1fr;
+    function clearAllAlerts() {
+        ['login', 'signup', 'forgot'].forEach(p => clearAlerts(p));
     }
 
-    .gi-auth-banner {
-        display: none; /* Hide decorative banner on small screens for comfortable clean layout */
+    function setButtonLoading(btn, isLoading, customText = 'Processing...') {
+        const textSpan = btn.querySelector('.gi-btn-text');
+        const loaderSpan = btn.querySelector('.gi-btn-loader');
+        
+        if (isLoading) {
+            btn.disabled = true;
+            if (textSpan) textSpan.style.display = 'none';
+            if (loaderSpan) {
+                loaderSpan.style.display = 'flex';
+                const spanTxt = loaderSpan.childNodes[2];
+                if (spanTxt && spanTxt.nodeType === Node.TEXT_NODE) {
+                    spanTxt.textContent = ` ${customText}`;
+                }
+            }
+        } else {
+            btn.disabled = false;
+            if (textSpan) textSpan.style.display = 'inline';
+            if (loaderSpan) loaderSpan.style.display = 'none';
+        }
     }
 
-    .gi-auth-forms-wrapper {
-        padding: 24px 16px;
+    // 7. FIREBASE ERROR CODE MAPPING
+    function getFriendlyErrorMessage(errorCode) {
+        switch (errorCode) {
+            case 'auth/invalid-email':
+            case 'auth/user-not-found':
+            case 'auth/wrong-password':
+            case 'auth/invalid-credential':
+                return 'Email or password is incorrect.';
+            case 'auth/email-already-in-use':
+                return 'An account with this email already exists.';
+            case 'auth/weak-password':
+                return 'Please choose a stronger password (at least 6 characters).';
+            case 'auth/network-request-failed':
+                return 'Unable to connect. Please check your internet connection and try again.';
+            case 'auth/popup-closed-by-user':
+                return 'Google sign-in window was closed before completion.';
+            default:
+                return 'An unexpected error occurred. Please try again.';
+        }
     }
-}
 
-/* Reduced Motion Support */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-    scroll-behavior: auto !important;
-  }
+    // 8. VALIDATION HELPERS
+    function validateEmail(email) {
+        const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return re.test(email);
+    }
+
+    function showFieldError(fieldId, message) {
+        const errorEl = document.getElementById(`${fieldId}-error`);
+        const inputEl = document.getElementById(fieldId);
+        if (errorEl && inputEl) {
+            errorEl.textContent = message;
+            errorEl.classList.add('visible');
+            inputEl.style.borderColor = 'var(--gi-danger)';
+        }
+    }
+
+    function clearFieldError(fieldId) {
+        const errorEl = document.getElementById(`${fieldId}-error`);
+        const inputEl = document.getElementById(fieldId);
+        if (errorEl && inputEl) {
+            errorEl.textContent = '';
+            errorEl.classList.remove('visible');
+            inputEl.style.borderColor = 'var(--gi-border)';
+        }
+    }
+
+    // 9. EMAIL/PASSWORD LOGIN HANDLER
+    loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearAlerts('login');
+
+        const email = document.getElementById('gi-login-email').value.trim();
+        const password = document.getElementById('gi-login-password').value;
+        const submitBtn = document.getElementById('gi-login-submit-btn');
+
+        let isValid = true;
+        if (!email || !validateEmail(email)) {
+            showFieldError('gi-login-email', 'Please enter a valid email address.');
+            isValid = false;
+        } else {
+            clearFieldError('gi-login-email');
+        }
+
+        if (!password) {
+            showFieldError('gi-login-password', 'Password is required.');
+            isValid = false;
+        } else {
+            clearFieldError('gi-login-password');
+        }
+
+        if (!isValid) return;
+
+        setButtonLoading(submitBtn, true, 'Signing in...');
+
+        try {
+            await auth.signInWithEmailAndPassword(email, password);
+            // Redirect is handled automatically by onAuthStateChanged
+        } catch (error) {
+            setButtonLoading(submitBtn, false);
+            showAlert('error', getFriendlyErrorMessage(error.code), 'login');
+        }
+    });
+
+    // 10. EMAIL/PASSWORD SIGNUP HANDLER
+    signupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearAlerts('signup');
+
+        const fullName = document.getElementById('gi-signup-name').value.trim();
+        const email = document.getElementById('gi-signup-email').value.trim();
+        const password = document.getElementById('gi-signup-password').value;
+        const confirmPassword = document.getElementById('gi-signup-confirm-password').value;
+        const submitBtn = document.getElementById('gi-signup-submit-btn');
+
+        let isValid = true;
+
+        if (!fullName) {
+            showFieldError('gi-signup-name', 'Full name is required.');
+            isValid = false;
+        } else {
+            clearFieldError('gi-signup-name');
+        }
+
+        if (!email || !validateEmail(email)) {
+            showFieldError('gi-signup-email', 'Please enter a valid email address.');
+            isValid = false;
+        } else {
+            clearFieldError('gi-signup-email');
+        }
+
+        if (!password || password.length < 6) {
+            showFieldError('gi-signup-password', 'Password must be at least 6 characters.');
+            isValid = false;
+        } else {
+            clearFieldError('gi-signup-password');
+        }
+
+        if (password !== confirmPassword) {
+            showFieldError('gi-signup-confirm-password', 'Passwords do not match.');
+            isValid = false;
+        } else {
+            clearFieldError('gi-signup-confirm-password');
+        }
+
+        if (!isValid) return;
+
+        setButtonLoading(submitBtn, true, 'Creating account...');
+
+        try {
+            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+            if (userCredential.user) {
+                await userCredential.user.updateProfile({
+                    displayName: fullName
+                });
+            }
+            // Redirect managed by auth state listener to /profile
+        } catch (error) {
+            setButtonLoading(submitBtn, false);
+            showAlert('error', getFriendlyErrorMessage(error.code), 'signup');
+        }
+    });
+
+    // 11. GOOGLE AUTHENTICATION HANDLER
+    async function handleGoogleAuth(btnElement) {
+        clearAllAlerts();
+        const originalText = btnElement.innerHTML;
+        btnElement.disabled = true;
+
+        try {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            await auth.signInWithPopup(provider);
+            // Redirect handled by onAuthStateChanged
+        } catch (error) {
+            btnElement.disabled = false;
+            btnElement.innerHTML = originalText;
+            showAlert('error', 'Google sign-in could not be completed. Please try again.', 'login');
+        }
+    }
+
+    googleLoginBtn.addEventListener('click', () => handleGoogleAuth(googleLoginBtn));
+    googleSignupBtn.addEventListener('click', () => handleGoogleAuth(googleSignupBtn));
+
+    // 12. FORGOT PASSWORD HANDLER
+    forgotForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        clearAlerts('forgot');
+
+        const email = document.getElementById('gi-forgot-email').value.trim();
+        const submitBtn = document.getElementById('gi-forgot-submit-btn');
+
+        if (!email || !validateEmail(email)) {
+            showFieldError('gi-forgot-email', 'Please enter a valid email address.');
+            return;
+        } else {
+            clearFieldError('gi-forgot-email');
+        }
+
+        setButtonLoading(submitBtn, true, 'Sending link...');
+
+        try {
+            await auth.sendPasswordResetEmail(email);
+            setButtonLoading(submitBtn, false);
+            showAlert('success', 'Password reset instructions have been sent to your email.', 'forgot');
+        } catch (error) {
+            setButtonLoading(submitBtn, false);
+            // For security, handle non-existing emails gracefully without throwing direct enumeration feedback
+            showAlert('success', 'Password reset instructions have been sent to your email.', 'forgot');
+        }
+    });
+});
