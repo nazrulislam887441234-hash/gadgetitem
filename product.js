@@ -16,19 +16,18 @@ import {
     doc, 
     getDoc, 
     setDoc, 
-    updateCode, // fallback safeguard
     serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // ================= 1. FIREBASE CONFIGURATION =================
-// Using existing Firebase project configuration architecture
 const firebaseConfig = {
-    apiKey: "AIzaSyD-placeholder-key-ghotimarket",
-    authDomain: "store.ghotimarket.com",
-    projectId: "ghotimarket-store",
-    storageBucket: "ghotimarket-store.appspot.com",
-    messagingSenderId: "123456789012",
-    appId: "1:123456789012:web:abcdef123456"
+  apiKey: "AIzaSyBEZA5iQBxOUJaKvFMtpVi6w-jMATNESoA",
+  authDomain: "gadget-item.firebaseapp.com",
+  projectId: "gadget-item",
+  storageBucket: "gadget-item.firebasestorage.app",
+  messagingSenderId: "1048854789116",
+  appId: "1:1048854789116:web:91c20aa6dd633815be5079",
+  measurementId: "G-2YMX097PSJ"
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApps()[0];
@@ -49,40 +48,53 @@ let isSignupMode = false;
 // ================= 2. ROBUST SLUG EXTRACTION =================
 function extractProductSlug() {
     const searchStr = window.location.search;
-    if (!searchStr) return null;
+    const pathname = window.location.pathname;
 
-    // Remove leading '?'
-    let cleanQuery = searchStr.startsWith('?') ? searchStr.substring(1) : searchStr;
+    let rawSlug = null;
 
-    // Split parameters by '&' or ';'
-    const params = cleanQuery.split(/[&;]/);
-    let rawSlugKey = null;
+    // ১. প্রথমে URL Query Parameters চেক করা (যেমন: ?product-slug)
+    if (searchStr) {
+        let cleanQuery = searchStr.startsWith('?') ? searchStr.substring(1) : searchStr;
+        const params = cleanQuery.split(/[&;]/);
+        const trackingParams = ['fbclid', 'gclid', 'dclid', 'msclkid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
 
-    const trackingParams = ['fbclid', 'gclid', 'dclid', 'msclkid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'];
+        for (let param of params) {
+            let parts = param.split('=');
+            let key = decodeURIComponent(parts[0] || '').trim();
+            let value = decodeURIComponent(parts[1] || '').trim();
 
-    for (let param of params) {
-        let parts = param.split('=');
-        let key = decodeURIComponent(parts[0] || '').trim();
-        let value = decodeURIComponent(parts[1] || '').trim();
+            if (trackingParams.includes(key.toLowerCase())) {
+                continue;
+            }
 
-        // If key is a tracking parameter, ignore it
-        if (trackingParams.includes(key.toLowerCase())) {
-            continue;
-        }
-
-        // The first non-tracking parameter key is our potential slug source
-        if (key) {
-            rawSlugKey = key;
-            break;
+            // যদি key-র ভেতরেই ভ্যালু না থাকে (যেমন ?my-product-slug), তবে key টাই স্লাগ
+            if (key && !value) {
+                rawSlug = key;
+                break;
+            } else if (key && value) {
+                // যদি ?slug=my-product ফরম্যাটে হয়
+                rawSlug = value;
+                break;
+            }
         }
     }
 
-    if (!rawSlugKey) return null;
+    // ২. যদি কুয়েরি থেকে না পাওয়া যায়, পাথ থেকে নেওয়ার চেষ্টা করা (যেমন: /product/my-slug)
+    if (!rawSlug && pathname) {
+        const segments = pathname.split('/').filter(Boolean);
+        if (segments.length > 0) {
+            const lastSegment = segments[segments.length - 1];
+            if (lastSegment !== 'product' && lastSegment !== 'shop') {
+                rawSlug = lastSegment;
+            }
+        }
+    }
 
-    // Remove accidental trailing '=' if any got caught
-    rawSlugKey = rawSlugKey.replace(/=+$/, '').trim();
+    if (!rawSlug) return null;
 
-    return rawSlugKey;
+    // ক্লিনআপ
+    rawSlug = rawSlug.replace(/=+$/, '').trim();
+    return rawSlug;
 }
 
 // ================= 3. INITIALIZATION & ROUTING =================
@@ -91,6 +103,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     initUIEventListeners();
 
     const extractedSlug = extractProductSlug();
+    
     if (!extractedSlug) {
         showErrorState("Invalid Product Link", "The product link is invalid or missing required parameters.", "/all-product");
         return;
@@ -104,30 +117,70 @@ async function loadProductData(slug) {
     try {
         showLoadingState(true);
 
-        // Slug resolution rule: support -true suffix (try exact, then strip -true)
-        let slugsToTry = [slug];
+        // ফ্লেক্সিবল স্লাগ রেজোলিউশন (বিভিন্ন ফরম্যাটে ট্রাই করা)
+        let decodedSlug = decodeURIComponent(slug);
+        let slugsToTry = [
+            slug, 
+            decodedSlug,
+            slug.toLowerCase(),
+            decodedSlug.toLowerCase()
+        ];
+
         if (slug.endsWith('-true')) {
             const stripped = slug.replace(/-true$/, '');
             if (stripped && !slugsToTry.includes(stripped)) {
                 slugsToTry.push(stripped);
+                slugsToTry.push(stripped.toLowerCase());
             }
         }
 
         let docSnap = null;
-        let matchedSlug = null;
 
+        // প্রথমে 'productSlug' ফিল্ড দিয়ে খোঁজা
         for (let testSlug of slugsToTry) {
             const q = query(collection(db, "products"), where("productSlug", "==", testSlug));
             const querySnapshot = await getDocs(q);
             if (!querySnapshot.empty) {
                 docSnap = querySnapshot.docs[0];
-                matchedSlug = testSlug;
                 break;
             }
         }
 
+        // যদি 'productSlug' দিয়ে না পাওয়া যায়, তবে ডকুমেন্ট আইডি (ID) হিসেবে চেক করা
+        if (!docSnap) {
+            for (let testSlug of slugsToTry) {
+                try {
+                    const docRef = doc(db, "products", testSlug);
+                    const directSnap = await getDoc(docRef);
+                    if (directSnap.exists()) {
+                        docSnap = directSnap;
+                        break;
+                    }
+                } catch (e) {
+                    // ইগনোর ইনভ্যালিড আইডি ফরম্যাট এরর
+                }
+            }
+        }
+
+        // শেষ চেষ্টা: সব প্রোডাক্ট ফেচ করে ক্লায়েন্ট সাইডে ফিল্টার করা (যদি ডেটাবেজ সেন্সিটিভ হয়)
+        if (!docSnap) {
+            const allProductsSnapshot = await getDocs(collection(db, "products"));
+            for (let d of allProductsSnapshot.docs) {
+                const data = d.data();
+                const pSlug = String(data.productSlug || "").trim().toLowerCase();
+                for (let testSlug of slugsToTry) {
+                    if (pSlug === testSlug.toLowerCase()) {
+                        docSnap = d;
+                        break;
+                    }
+                }
+                if (docSnap) break;
+            }
+        }
+
+        // প্রোডাক্ট না পাওয়া গেলে সঠিক এরর স্টেট কল করা
         if (!docSnap || !docSnap.exists()) {
-            showErrorState("Product Not Found", "The requested product does not exist in our catalog.", "/all-product");
+            showErrorState("Product Not Found", "The requested product does not exist in our catalog or may have been removed.", "/all-product");
             return;
         }
 
@@ -150,12 +203,11 @@ async function loadProductData(slug) {
         renderProductPage();
         showLoadingState(false);
 
-        // Check pending actions after product load & auth check
         checkAndExecutePendingAction();
 
     } catch (error) {
         console.error("Error loading product:", error);
-        showErrorState("Unable to load this product.", "An error occurred while fetching product data. Please try again.", null, true);
+        showErrorState("Unable to load this product.", "An error occurred while fetching product data. Please check your internet connection and try again.", null, true);
     }
 }
 
@@ -163,20 +215,18 @@ async function loadProductData(slug) {
 function renderProductPage() {
     if (!currentProduct) return;
 
-    // Active Status Check
     const isActive = currentProduct.active === true;
     const activeActionsEl = document.getElementById("activeProductActions");
     const inactiveNoticeEl = document.getElementById("inactiveProductNotice");
 
     if (isActive) {
-        activeActionsEl.classList.remove("hidden");
-        inactiveNoticeEl.classList.add("hidden");
+        if(activeActionsEl) activeActionsEl.classList.remove("hidden");
+        if(inactiveNoticeEl) inactiveNoticeEl.classList.add("hidden");
     } else {
-        activeActionsEl.classList.add("hidden");
-        inactiveNoticeEl.classList.remove("hidden");
+        if(activeActionsEl) activeActionsEl.classList.add("hidden");
+        if(inactiveNoticeEl) inactiveNoticeEl.classList.remove("hidden");
     }
 
-    // Dynamic SEO & Document Title
     const prodName = currentProduct.productName || "Product";
     document.title = `${prodName} | Gadgets Item`;
 
@@ -188,71 +238,54 @@ function renderProductPage() {
     updateMetaTag('property', 'og:description', descriptionText);
     updateMetaTag('property', 'og:image', primaryImg);
     updateMetaTag('property', 'og:url', window.location.href);
-    updateMetaTag('name', 'twitter:title', `${prodName} | Gadgets Item`);
-    updateMetaTag('name', 'twitter:description', descriptionText);
-    updateMetaTag('name', 'twitter:image', primaryImg);
 
-    const canonicalEl = document.querySelector('link[rel="canonical"]');
-    if (canonicalEl) canonicalEl.setAttribute('href', window.location.href);
-
-    // Render Category
     const categoryName = currentCategoryObj?.categoryName || currentProduct.categoryName || "General";
-    document.getElementById("productCategoryBadge").textContent = categoryName;
+    const catBadge = document.getElementById("productCategoryBadge");
+    if(catBadge) catBadge.textContent = categoryName;
 
-    // Render Title & SKU
-    document.getElementById("productTitle").textContent = prodName;
-    document.getElementById("productSku").textContent = currentProduct.SKU || "N/A";
+    const titleEl = document.getElementById("productTitle");
+    if(titleEl) titleEl.textContent = prodName;
+    
+    const skuEl = document.getElementById("productSku");
+    if(skuEl) skuEl.textContent = currentProduct.SKU || "N/A";
 
-    // Warranty
     const warrantyEl = document.getElementById("productWarranty");
     const warrantyWrapper = document.getElementById("warrantyBadgeWrapper");
-    if (currentProduct.warranty) {
+    if (currentProduct.warranty && warrantyEl && warrantyWrapper) {
         warrantyEl.textContent = currentProduct.warranty;
         warrantyWrapper.style.display = "inline-flex";
-    } else {
+    } else if(warrantyWrapper) {
         warrantyWrapper.style.display = "none";
     }
 
-    // Free Delivery
     const deliveryRow = document.getElementById("deliveryStatusRow");
-    if (currentProduct.freeDelivery === true) {
-        deliveryRow.style.display = "flex";
-    } else {
-        deliveryRow.style.display = "none";
+    if (deliveryRow) {
+        deliveryRow.style.display = (currentProduct.freeDelivery === true) ? "flex" : "none";
     }
 
-    // Image Gallery
     renderImageGallery(currentProduct.productImage);
-
-    // Variants
     renderVariants(currentProduct.variants);
-
-    // Price and Discount Calculation
     updateCalculatedPriceAndDiscounts();
-
-    // Offer Countdown
     setupOfferCountdown(currentProduct.offerTime);
 
-    // Description & Video
     const descCard = document.getElementById("descriptionCardWrapper");
     const descContent = document.getElementById("productDescriptionContent");
-    if (currentProduct.productDescription) {
+    if (currentProduct.productDescription && descCard && descContent) {
         descContent.innerHTML = escapeHtml(currentProduct.productDescription).replace(/\n/g, '<br>');
         descCard.style.display = "block";
-    } else {
+    } else if(descCard) {
         descCard.style.display = "none";
     }
 
     const videoCard = document.getElementById("videoCardWrapper");
     const videoIframe = document.getElementById("productVideoIframe");
-    if (currentProduct.videoLink && isValidHttpUrl(currentProduct.videoLink)) {
+    if (currentProduct.videoLink && isValidHttpUrl(currentProduct.videoLink) && videoCard && videoIframe) {
         videoIframe.src = currentProduct.videoLink;
         videoCard.style.display = "block";
-    } else {
+    } else if(videoCard) {
         videoCard.style.display = "none";
     }
 
-    // Structured Data (JSON-LD)
     injectStructuredData(prodName, primaryImg, descriptionText, currentProduct.SKU, categoryName);
 }
 
@@ -263,11 +296,13 @@ function renderImageGallery(images) {
     const prevBtn = document.getElementById("prevImageBtn");
     const nextBtn = document.getElementById("nextImageBtn");
 
+    if (!mainImg) return;
+
     if (!images || !Array.isArray(images) || images.length === 0) {
         mainImg.src = "https://ghotimarket.com/banner1.png";
-        thumbStrip.innerHTML = "";
-        prevBtn.style.display = "none";
-        nextBtn.style.display = "none";
+        if(thumbStrip) thumbStrip.innerHTML = "";
+        if(prevBtn) prevBtn.style.display = "none";
+        if(nextBtn) nextBtn.style.display = "none";
         return;
     }
 
@@ -276,41 +311,47 @@ function renderImageGallery(images) {
     mainImg.alt = currentProduct.productName || "Product Image";
 
     if (images.length <= 1) {
-        prevBtn.style.display = "none";
-        nextBtn.style.display = "none";
-        thumbStrip.style.display = "none";
+        if(prevBtn) prevBtn.style.display = "none";
+        if(nextBtn) nextBtn.style.display = "none";
+        if(thumbStrip) thumbStrip.style.display = "none";
         return;
     }
 
-    prevBtn.style.display = "flex";
-    nextBtn.style.display = "flex";
-    thumbStrip.style.display = "flex";
+    if(prevBtn) prevBtn.style.display = "flex";
+    if(nextBtn) nextBtn.style.display = "flex";
+    if(thumbStrip) thumbStrip.style.display = "flex";
 
-    thumbStrip.innerHTML = "";
-    images.forEach((imgUrl, idx) => {
-        const thumb = document.createElement("div");
-        thumb.className = `thumbnail-item ${idx === 0 ? 'active' : ''}`;
-        thumb.innerHTML = `<img src="${escapeHtml(imgUrl)}" alt="Thumbnail ${idx + 1}" loading="lazy">`;
-        thumb.addEventListener("click", () => {
-            setMainImage(idx, images);
+    if(thumbStrip) {
+        thumbStrip.innerHTML = "";
+        images.forEach((imgUrl, idx) => {
+            const thumb = document.createElement("div");
+            thumb.className = `thumbnail-item ${idx === 0 ? 'active' : ''}`;
+            thumb.innerHTML = `<img src="${escapeHtml(imgUrl)}" alt="Thumbnail ${idx + 1}" loading="lazy">`;
+            thumb.addEventListener("click", () => setMainImage(idx, images));
+            thumbStrip.appendChild(thumb);
         });
-        thumbStrip.appendChild(thumb);
-    });
+    }
 
-    prevBtn.onclick = () => {
-        let newIdx = (currentImageIndex - 1 + images.length) % images.length;
-        setMainImage(newIdx, images);
-    };
+    if(prevBtn) {
+        prevBtn.onclick = () => {
+            let newIdx = (currentImageIndex - 1 + images.length) % images.length;
+            setMainImage(newIdx, images);
+        };
+    }
 
-    nextBtn.onclick = () => {
-        let newIdx = (currentImageIndex + 1) % images.length;
-        setMainImage(newIdx, images);
-    };
+    if(nextBtn) {
+        nextBtn.onclick = () => {
+            let newIdx = (currentImageIndex + 1) % images.length;
+            setMainImage(newIdx, images);
+        };
+    }
 }
 
 function setMainImage(index, images) {
     currentImageIndex = index;
     const mainImg = document.getElementById("mainProductImage");
+    if (!mainImg) return;
+    
     mainImg.style.opacity = "0.4";
     setTimeout(() => {
         mainImg.src = images[index];
@@ -327,6 +368,8 @@ function setMainImage(index, images) {
 // ================= 7. VARIANTS & PRICING LOGIC =================
 function renderVariants(variants) {
     const container = document.getElementById("variantsContainer");
+    if (!container) return;
+    
     container.innerHTML = "";
     selectedVariantsState = {};
 
@@ -377,7 +420,7 @@ function renderVariants(variants) {
                 chip.addEventListener("click", () => {
                     optionsList.querySelectorAll(".variant-chip").forEach(c => {
                         c.classList.remove("selected");
-                        c.innerHTML = c.textContent.replace(/^[✓\s]+/, ''); // Clean old check
+                        c.innerHTML = c.textContent.replace(/^[✓\s]+/, '');
                     });
 
                     chip.classList.add("selected");
@@ -415,7 +458,8 @@ function updateCalculatedPriceAndDiscounts() {
     const unitPrice = calculateFinalUnitPrice();
     const oldPrice = Number(currentProduct.oldPrice) || 0;
 
-    document.getElementById("currentPriceDisplay").textContent = `৳${formatNumber(unitPrice)}`;
+    const currentPriceDisplay = document.getElementById("currentPriceDisplay");
+    if(currentPriceDisplay) currentPriceDisplay.textContent = `৳${formatNumber(unitPrice)}`;
 
     const oldPriceEl = document.getElementById("oldPriceDisplay");
     const discountEl = document.getElementById("discountBadge");
@@ -425,18 +469,13 @@ function updateCalculatedPriceAndDiscounts() {
         const discountPercentage = Math.round(((oldPrice - unitPrice) / oldPrice) * 100);
         const saveAmount = oldPrice - unitPrice;
 
-        oldPriceEl.textContent = `৳${formatNumber(oldPrice)}`;
-        oldPriceEl.style.display = "inline";
-
-        discountEl.textContent = `${discountPercentage}% OFF`;
-        discountEl.style.display = "inline-block";
-
-        saveEl.textContent = `Save ৳${formatNumber(saveAmount)}`;
-        saveEl.style.display = "block";
+        if(oldPriceEl) { oldPriceEl.textContent = `৳${formatNumber(oldPrice)}`; oldPriceEl.style.display = "inline"; }
+        if(discountEl) { discountEl.textContent = `${discountPercentage}% OFF`; discountEl.style.display = "inline-block"; }
+        if(saveEl) { saveEl.textContent = `Save ৳${formatNumber(saveAmount)}`; saveEl.style.display = "block"; }
     } else {
-        oldPriceEl.style.display = "none";
-        discountEl.style.display = "none";
-        saveEl.style.display = "none";
+        if(oldPriceEl) oldPriceEl.style.display = "none";
+        if(discountEl) discountEl.style.display = "none";
+        if(saveEl) saveEl.style.display = "none";
     }
 }
 
@@ -445,22 +484,28 @@ const decreaseBtn = document.getElementById("decreaseQtyBtn");
 const increaseBtn = document.getElementById("increaseQtyBtn");
 const qtyDisplay = document.getElementById("productQuantityDisplay");
 
-decreaseBtn.addEventListener("click", () => {
-    if (currentQuantity > 1) {
-        currentQuantity--;
-        qtyDisplay.textContent = currentQuantity;
-    }
-});
+if(decreaseBtn) {
+    decreaseBtn.addEventListener("click", () => {
+        if (currentQuantity > 1) {
+            currentQuantity--;
+            if(qtyDisplay) qtyDisplay.textContent = currentQuantity;
+        }
+    });
+}
 
-increaseBtn.addEventListener("click", () => {
-    currentQuantity++;
-    qtyDisplay.textContent = currentQuantity;
-});
+if(increaseBtn) {
+    increaseBtn.addEventListener("click", () => {
+        currentQuantity++;
+        if(qtyDisplay) qtyDisplay.textContent = currentQuantity;
+    });
+}
 
 // ================= 9. OFFER COUNTDOWN TIMER =================
 function setupOfferCountdown(offerTime) {
     const box = document.getElementById("offerCountdownBox");
     const valuesEl = document.getElementById("countdownValues");
+
+    if(!box) return;
 
     if (!offerTime || typeof offerTime !== 'number' || offerTime <= Date.now()) {
         box.style.display = "none";
@@ -468,7 +513,6 @@ function setupOfferCountdown(offerTime) {
     }
 
     box.style.display = "block";
-
     if (countdownInterval) clearInterval(countdownInterval);
 
     function updateTimer() {
@@ -487,7 +531,7 @@ function setupOfferCountdown(offerTime) {
         const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
         const pad = (n) => String(n).padStart(2, '0');
-        valuesEl.textContent = `${pad(days)} Days ${pad(hours)} Hours ${pad(minutes)} Minutes ${pad(seconds)} Seconds`;
+        if(valuesEl) valuesEl.textContent = `${pad(days)} Days ${pad(hours)} Hours ${pad(minutes)} Minutes ${pad(seconds)} Seconds`;
     }
 
     updateTimer();
@@ -507,19 +551,20 @@ function initAuthListener() {
     });
 }
 
-document.getElementById("addToCartBtn").addEventListener("click", () => {
-    handleCartAction("addToCart");
-});
+const addToCartBtn = document.getElementById("addToCartBtn");
+if(addToCartBtn) {
+    addToCartBtn.addEventListener("click", () => handleCartAction("addToCart"));
+}
 
-document.getElementById("buyNowBtn").addEventListener("click", () => {
-    handleCartAction("buyNow");
-});
+const buyNowBtn = document.getElementById("buyNowBtn");
+if(buyNowBtn) {
+    buyNowBtn.addEventListener("click", () => handleCartAction("buyNow"));
+}
 
 async function handleCartAction(actionType) {
     if (!currentProduct || !currentProductId) return;
 
     if (!currentUser) {
-        // Save pending action in sessionStorage
         pendingAction = {
             action: actionType,
             productId: currentProductId,
@@ -540,7 +585,6 @@ async function executeCartOperation(actionType, user) {
         const totalPrice = unitPrice * currentQuantity;
         const productImage = (currentProduct.productImage && currentProduct.productImage.length > 0) ? currentProduct.productImage[0] : "";
 
-        // Check user's cart in Firestore carts collection
         const cartsQuery = query(collection(db, "carts"), where("uid", "==", user.uid));
         const cartsSnapshot = await getDocs(cartsQuery);
 
@@ -556,11 +600,9 @@ async function executeCartOperation(actionType, user) {
             cartDocRef = doc(collection(db, "carts"));
         }
 
-        // Check if product with exact variants already exists in cart
         const existingItemIndex = cartData.items.findIndex(item => item.productId === currentProductId);
 
         if (existingItemIndex !== -1) {
-            // Already in cart
             if (actionType === "addToCart") {
                 showToastNotification("Already cart added");
                 return;
@@ -589,12 +631,13 @@ async function executeCartOperation(actionType, user) {
 
     } catch (err) {
         console.error("Cart operation error:", err);
-        showAuthErrorBanner("Unable to add this product to cart. Please try again.");
+        showToastNotification("Unable to add this product to cart. Please try again.");
     }
 }
 
 async function updateHeaderCartCount() {
     const badge = document.getElementById("headerCartCount");
+    if (!badge) return;
     if (!currentUser) {
         badge.textContent = "0";
         return;
@@ -611,7 +654,6 @@ async function updateHeaderCartCount() {
         }
         badge.textContent = count;
     } catch (err) {
-        console.error("Error fetching cart count:", err);
         badge.textContent = "0";
     }
 }
@@ -626,7 +668,7 @@ async function checkAndExecutePendingAction() {
 
         if (actionObj && actionObj.productId === currentProductId) {
             currentQuantity = actionObj.quantity || 1;
-            document.getElementById("productQuantityDisplay").textContent = currentQuantity;
+            if(qtyDisplay) qtyDisplay.textContent = currentQuantity;
             await executeCartOperation(actionObj.action, currentUser);
         }
     } catch (err) {
@@ -646,79 +688,90 @@ const authSubmitBtn = document.getElementById("authSubmitBtn");
 const authErrorBanner = document.getElementById("authErrorBanner");
 
 function openAuthModal() {
-    authModalOverlay.classList.remove("hidden");
+    if(authModalOverlay) authModalOverlay.classList.remove("hidden");
 }
 
 function closeAuthModal() {
-    authModalOverlay.classList.add("hidden");
-    authErrorBanner.classList.add("hidden");
+    if(authModalOverlay) authModalOverlay.classList.add("hidden");
+    if(authErrorBanner) authErrorBanner.classList.add("hidden");
 }
 
-authCloseBtn.addEventListener("click", closeAuthModal);
-authModalOverlay.addEventListener("click", (e) => {
-    if (e.target === authModalOverlay) closeAuthModal();
-});
+if(authCloseBtn) authCloseBtn.addEventListener("click", closeAuthModal);
+if(authModalOverlay) {
+    authModalOverlay.addEventListener("click", (e) => {
+        if (e.target === authModalOverlay) closeAuthModal();
+    });
+}
 
-authToggleLink.addEventListener("click", () => {
-    isSignupMode = !isSignupMode;
-    if (isSignupMode) {
-        authSubmitBtn.textContent = "Sign Up";
-        authToggleText.textContent = "Already have an account?";
-        authToggleLink.textContent = "Login";
-        confirmPasswordGroup.classList.remove("hidden");
-    } else {
-        authSubmitBtn.textContent = "Login";
-        authToggleText.textContent = "Don't have an account?";
-        authToggleLink.textContent = "Sign Up";
-        confirmPasswordGroup.classList.add("hidden");
-    }
-});
-
-googleLoginBtn.addEventListener("click", async () => {
-    try {
-        authErrorBanner.classList.add("hidden");
-        const provider = new GoogleAuthProvider();
-        await signInWithPopup(auth, provider);
-        closeAuthModal();
-    } catch (err) {
-        console.error("Google auth error:", err);
-        showAuthErrorBanner("Google authentication failed. Please try again.");
-    }
-});
-
-emailAuthForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    authErrorBanner.classList.add("hidden");
-
-    const email = document.getElementById("authEmailInput").value.trim();
-    const password = document.getElementById("authPasswordInput").value;
-
-    if (!email || !password) {
-        showAuthErrorBanner("Please fill in all fields.");
-        return;
-    }
-
-    try {
+if(authToggleLink) {
+    authToggleLink.addEventListener("click", () => {
+        isSignupMode = !isSignupMode;
         if (isSignupMode) {
-            const confirmPass = document.getElementById("authConfirmPasswordInput").value;
-            if (password !== confirmPass) {
-                showAuthErrorBanner("Passwords do not match.");
-                return;
-            }
-            await createUserWithEmailAndPassword(auth, email, password);
+            if(authSubmitBtn) authSubmitBtn.textContent = "Sign Up";
+            if(authToggleText) authToggleText.textContent = "Already have an account?";
+            if(authToggleLink) authToggleLink.textContent = "Login";
+            if(confirmPasswordGroup) confirmPasswordGroup.classList.remove("hidden");
         } else {
-            await signInWithEmailAndPassword(auth, email, password);
+            if(authSubmitBtn) authSubmitBtn.textContent = "Login";
+            if(authToggleText) authToggleText.textContent = "Don't have an account?";
+            if(authToggleLink) authToggleLink.textContent = "Sign Up";
+            if(confirmPasswordGroup) confirmPasswordGroup.classList.add("hidden");
         }
-        closeAuthModal();
-    } catch (err) {
-        console.error("Email auth error:", err);
-        showAuthErrorBanner(getFriendlyAuthErrorMessage(err.code));
-    }
-});
+    });
+}
+
+if(googleLoginBtn) {
+    googleLoginBtn.addEventListener("click", async () => {
+        try {
+            if(authErrorBanner) authErrorBanner.classList.add("hidden");
+            const provider = new GoogleAuthProvider();
+            await signInWithPopup(auth, provider);
+            closeAuthModal();
+        } catch (err) {
+            showAuthErrorBanner("Google authentication failed. Please try again.");
+        }
+    });
+}
+
+if(emailAuthForm) {
+    emailAuthForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        if(authErrorBanner) authErrorBanner.classList.add("hidden");
+
+        const emailInput = document.getElementById("authEmailInput");
+        const passwordInput = document.getElementById("authPasswordInput");
+        const email = emailInput ? emailInput.value.trim() : "";
+        const password = passwordInput ? passwordInput.value : "";
+
+        if (!email || !password) {
+            showAuthErrorBanner("Please fill in all fields.");
+            return;
+        }
+
+        try {
+            if (isSignupMode) {
+                const confirmPassInput = document.getElementById("authConfirmPasswordInput");
+                const confirmPass = confirmPassInput ? confirmPassInput.value : "";
+                if (password !== confirmPass) {
+                    showAuthErrorBanner("Passwords do not match.");
+                    return;
+                }
+                await createUserWithEmailAndPassword(auth, email, password);
+            } else {
+                await signInWithEmailAndPassword(auth, email, password);
+            }
+            closeAuthModal();
+        } catch (err) {
+            showAuthErrorBanner(getFriendlyAuthErrorMessage(err.code));
+        }
+    });
+}
 
 function showAuthErrorBanner(msg) {
-    authErrorBanner.textContent = msg;
-    authErrorBanner.classList.remove("hidden");
+    if(authErrorBanner) {
+        authErrorBanner.textContent = msg;
+        authErrorBanner.classList.remove("hidden");
+    }
 }
 
 function getFriendlyAuthErrorMessage(code) {
@@ -738,34 +791,42 @@ function showLoadingState(isLoading) {
     const container = document.getElementById("productContainer");
     const errorState = document.getElementById("errorState");
 
-    errorState.classList.add("hidden");
+    if(errorState) errorState.classList.add("hidden");
     if (isLoading) {
-        skeleton.classList.remove("hidden");
-        container.classList.add("hidden");
+        if(skeleton) skeleton.classList.remove("hidden");
+        if(container) container.classList.add("hidden");
     } else {
-        skeleton.classList.add("hidden");
-        container.classList.remove("hidden");
+        if(skeleton) skeleton.classList.add("hidden");
+        if(container) container.classList.remove("hidden");
     }
 }
 
 function showErrorState(title, message, redirectUrl = "/all-product", showRetry = false) {
     showLoadingState(false);
-    document.getElementById("productContainer").classList.add("hidden");
+    const productContainer = document.getElementById("productContainer");
+    if(productContainer) productContainer.classList.add("hidden");
+    
     const errorState = document.getElementById("errorState");
+    if(!errorState) return;
+    
     errorState.classList.remove("hidden");
 
-    document.getElementById("errorTitle").textContent = title;
-    document.getElementById("errorMessage").textContent = message;
+    const errTitle = document.getElementById("errorTitle");
+    const errMsg = document.getElementById("errorMessage");
+    if(errTitle) errTitle.textContent = title;
+    if(errMsg) errMsg.textContent = message;
 
     const actionBtn = document.getElementById("errorActionBtn");
-    if (showRetry) {
-        actionBtn.textContent = "Try Again";
-        actionBtn.onclick = () => window.location.reload();
-        actionBtn.removeAttribute("href");
-    } else {
-        actionBtn.textContent = "Browse All Products";
-        actionBtn.href = redirectUrl;
-        actionBtn.onclick = null;
+    if(actionBtn) {
+        if (showRetry) {
+            actionBtn.textContent = "Try Again";
+            actionBtn.onclick = () => window.location.reload();
+            actionBtn.removeAttribute("href");
+        } else {
+            actionBtn.textContent = "Browse All Products";
+            actionBtn.href = redirectUrl;
+            actionBtn.onclick = null;
+        }
     }
 }
 
@@ -788,7 +849,6 @@ function showToastNotification(message) {
         font-size: 14px;
         z-index: 2000;
         box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        animation: fadeInOut 2.5s ease forwards;
     `;
     toast.textContent = message;
     document.body.appendChild(toast);
