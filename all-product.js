@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, doc, setDoc, getDoc, limit, orderBy, startAfter } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -17,18 +17,20 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 const googleProvider = new GoogleAuthProvider();
 
-// State Variables for Pagination & Infinite Scroll (20 items limit per batch)
+// State Variables for Pagination (Limit 20 items per batch)
 let allProducts = [];
 let filteredProducts = [];
 let renderedCount = 0;
 const BATCH_LIMIT = 20;
-let userCart = { items: [] };
+let userCartItems = [];
 let currentUser = null;
-let pendingAction = null; // { type: 'cart'|'buynow', product, selectedVariants, quantity }
+let pendingAction = null;
 let sliderIntervals = new Map();
 
 // DOM Elements
 const productGrid = document.getElementById('giProductGrid');
+const loadMoreContainer = document.getElementById('giLoadMoreContainer');
+const loadMoreBtn = document.getElementById('giLoadMoreBtn');
 const errorState = document.getElementById('giErrorState');
 const emptyState = document.getElementById('giEmptyState');
 const retryBtn = document.getElementById('giRetryBtn');
@@ -50,7 +52,7 @@ const modalBodyContent = document.getElementById('giModalBodyContent');
 // Safe HTML Escaping
 function escapeHTML(str) {
     if (!str) return '';
-    return str.replace(/[&<>'"]/g, 
+    return String(str).replace(/[&<>'"]/g, 
         tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
     );
 }
@@ -90,7 +92,7 @@ onAuthStateChanged(auth, async (user) => {
     if (user) {
         await fetchUserCart();
     } else {
-        userCart = { items: [] };
+        userCartItems = [];
         updateCartBadgeCount();
     }
     renderProducts(true);
@@ -99,33 +101,60 @@ onAuthStateChanged(auth, async (user) => {
 async function fetchUserCart() {
     if (!currentUser) return;
     try {
-        const cartDocRef = doc(db, "carts", currentUser.uid);
-        const cartSnap = await getDoc(cartDocRef);
-        if (cartSnap.exists()) {
-            userCart = cartSnap.data();
-            if (!userCart.items) userCart.items = [];
+        const userCartRef = doc(db, "carts", currentUser.uid);
+        const docSnap = await getDoc(userCartRef);
+        if (docSnap.exists()) {
+            userCartItems = docSnap.data().items || [];
         } else {
-            userCart = { items: [] };
+            userCartItems = [];
         }
     } catch (error) {
         console.error("Error fetching cart:", error);
+        userCartItems = [];
     }
     updateCartBadgeCount();
 }
 
-async function saveUserCart() {
-    if (!currentUser) return;
+async function saveCartItemToFirestore(newItem) {
+    if (!currentUser) return { success: false, isDuplicate: false };
+    const userCartRef = doc(db, "carts", currentUser.uid);
+
     try {
-        const cartDocRef = doc(db, "carts", currentUser.uid);
-        await setDoc(cartDocRef, userCart, { merge: true });
+        const docSnap = await getDoc(userCartRef);
+        let items = [];
+
+        if (docSnap.exists()) {
+            items = docSnap.data().items || [];
+        }
+
+        const existingIndex = items.findIndex(item => item.productId === newItem.productId);
+        if (existingIndex > -1) {
+            return { success: true, isDuplicate: true };
+        }
+
+        items.push(newItem);
+
+        await setDoc(userCartRef, {
+            uid: currentUser.uid,
+            email: currentUser.email || '',
+            updatedAt: new Date().toISOString(),
+            items: items
+        }, { merge: true });
+
+        userCartItems = items;
+        return { success: true, isDuplicate: false };
     } catch (error) {
-        console.error("Error saving cart:", error);
+        console.error("Cart save error:", error);
+        showToast("Failed to update cart. Please try again.", "error");
+        return { success: false, isDuplicate: false };
     }
 }
 
 function updateCartBadgeCount() {
-    const count = userCart.items ? userCart.items.length : 0;
-    cartBadge.textContent = count;
+    const count = userCartItems ? userCartItems.length : 0;
+    if(cartBadge) cartBadge.textContent = count;
+    const navBadge = document.getElementById('nav-cart-badge');
+    if(navBadge) navBadge.textContent = count;
 }
 
 // Fetch Products from Firestore
@@ -224,7 +253,7 @@ function clearAllSliders() {
     sliderIntervals.clear();
 }
 
-// Render Products Grid with Batch Limit
+// Render Products Grid with Limit 20 and Load More Button Support
 function renderProducts(reset = false) {
     if (reset) {
         clearAllSliders();
@@ -234,6 +263,7 @@ function renderProducts(reset = false) {
 
     if (filteredProducts.length === 0) {
         productGrid.style.display = 'none';
+        loadMoreContainer.style.display = 'none';
         emptyState.style.display = 'block';
         return;
     }
@@ -248,74 +278,131 @@ function renderProducts(reset = false) {
     });
 
     renderedCount += nextBatch.length;
+
+    // Show or Hide Load More Button based on remaining products
+    if (renderedCount < filteredProducts.length) {
+        loadMoreContainer.style.display = 'flex';
+    } else {
+        loadMoreContainer.style.display = 'none';
+    }
 }
 
-// Infinite Scroll Event
-window.addEventListener('scroll', () => {
-    if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 300) {
+// Load More Button Event Listener
+if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', () => {
         if (renderedCount < filteredProducts.length) {
             renderProducts(false);
         }
-    }
-});
+    });
+}
 
-// Add Item to Cart Functionality
-async function handleAddToCart(product, selectedVariants, quantity) {
+// Helper to compute unit price based on variants extra price
+function computeUnitPrice(basePrice, selectedVariants) {
+    let extra = 0;
+    if (selectedVariants) {
+        Object.values(selectedVariants).forEach(valObj => {
+            extra += Number(valObj.extraPrice) || 0;
+        });
+    }
+    return basePrice + extra;
+}
+
+// Add Item to Cart Functionality with "Saving" loading state
+async function handleAddToCart(product, selectedVariants, quantity, buttonElement = null) {
     if (!currentUser) {
         pendingAction = { type: 'cart', product, selectedVariants, quantity };
         authModal.style.display = 'flex';
         return;
     }
 
-    const cartItem = {
-        productId: product.id,
-        productName: product.productName,
-        productPrice: product.productPrice,
-        selectedVariants: selectedVariants || {},
-        quantity: quantity || 1,
-        image: (product.productImage && product.productImage[0]) ? product.productImage[0] : ''
-    };
-
-    const existingIndex = userCart.items.findIndex(item => item.productId === product.id);
-    if (existingIndex > -1) {
-        userCart.items[existingIndex] = cartItem;
-    } else {
-        userCart.items.push(cartItem);
+    let originalBtnHtml = '';
+    if (buttonElement) {
+        originalBtnHtml = buttonElement.innerHTML;
+        buttonElement.disabled = true;
+        buttonElement.classList.add('gi-btn-loading');
+        buttonElement.innerHTML = `<div class="gi-btn-spinner"></div><span>saving</span>`;
     }
 
+    const basePrice = Number(product.productPrice) || 0;
+    const finalUnitPrice = computeUnitPrice(basePrice, selectedVariants);
+    const finalQuantity = quantity || 1;
+    const productSlug = product.productSlug || generateSlug(product.productName);
+    const productImage = (product.productImage && product.productImage[0]) ? product.productImage[0] : 'https://ghotimarket.com/amrweb/banner1.png';
+
+    const newItem = {
+        productId: product.id,
+        productName: product.productName || '',
+        productSlug: productSlug,
+        productImage: productImage,
+        productPrice: basePrice,
+        selectedVariants: selectedVariants || {},
+        quantity: finalQuantity,
+        unitPrice: finalUnitPrice,
+        totalPrice: finalUnitPrice * finalQuantity,
+        SKU: product.SKU || '',
+        categoryId: product.categoryId || '',
+        freeDelivery: !!product.freeDelivery,
+        addedAt: new Date().toISOString()
+    };
+
+    const res = await saveCartItemToFirestore(newItem);
     updateCartBadgeCount();
-    await saveUserCart();
-    showToast("This Product already added from cart!", "success");
-    closeProductModal();
-    renderProducts(true);
+
+    if (buttonElement) {
+        buttonElement.disabled = false;
+        buttonElement.classList.remove('gi-btn-loading');
+        buttonElement.innerHTML = originalBtnHtml;
+    }
+
+    if (res.isDuplicate) {
+        showToast("This product already added from cart!");
+    } else if (res.success) {
+        showToast("Added to Cart successfully!", "success");
+        closeProductModal();
+        renderProducts(true);
+    }
 }
 
-// Buy Now Functionality (Adds to cart if not present, then goes to /checkout)
-async function handleBuyNow(product, selectedVariants, quantity) {
+// Buy Now Functionality with "Saving" loading state
+async function handleBuyNow(product, selectedVariants, quantity, buttonElement = null) {
     if (!currentUser) {
         pendingAction = { type: 'buynow', product, selectedVariants, quantity };
         authModal.style.display = 'flex';
         return;
     }
 
-    const cartItem = {
-        productId: product.id,
-        productName: product.productName,
-        productPrice: product.productPrice,
-        selectedVariants: selectedVariants || {},
-        quantity: quantity || 1,
-        image: (product.productImage && product.productImage[0]) ? product.productImage[0] : ''
-    };
-
-    const existingIndex = userCart.items.findIndex(item => item.productId === product.id);
-    if (existingIndex > -1) {
-        userCart.items[existingIndex] = cartItem;
-    } else {
-        userCart.items.push(cartItem);
+    let originalBtnHtml = '';
+    if (buttonElement) {
+        originalBtnHtml = buttonElement.innerHTML;
+        buttonElement.disabled = true;
+        buttonElement.classList.add('gi-btn-loading');
+        buttonElement.innerHTML = `<div class="gi-btn-spinner"></div><span>saving</span>`;
     }
 
+    const basePrice = Number(product.productPrice) || 0;
+    const finalUnitPrice = computeUnitPrice(basePrice, selectedVariants);
+    const finalQuantity = quantity || 1;
+    const productSlug = product.productSlug || generateSlug(product.productName);
+    const productImage = (product.productImage && product.productImage[0]) ? product.productImage[0] : 'https://ghotimarket.com/amrweb/banner1.png';
+
+    const newItem = {
+        productId: product.id,
+        productName: product.productName || '',
+        productSlug: productSlug,
+        productImage: productImage,
+        productPrice: basePrice,
+        selectedVariants: selectedVariants || {},
+        quantity: finalQuantity,
+        unitPrice: finalUnitPrice,
+        totalPrice: finalUnitPrice * finalQuantity,
+        SKU: product.SKU || '',
+        categoryId: product.categoryId || '',
+        freeDelivery: !!product.freeDelivery,
+        addedAt: new Date().toISOString()
+    };
+
+    await saveCartItemToFirestore(newItem);
     updateCartBadgeCount();
-    await saveUserCart();
     closeProductModal();
     window.location.href = '/checkout';
 }
@@ -325,18 +412,17 @@ function createProductCard(product) {
     const card = document.createElement('div');
     card.className = 'gi-product-card';
 
-    const inCartIndex = userCart.items.findIndex(item => item.productId === product.id);
-    const isAlreadyInCart = inCartIndex > -1;
+    const isAlreadyInCart = userCartItems.some(item => item.productId === product.id);
 
     const images = (product.productImage && product.productImage.length > 0) 
         ? product.productImage 
         : ['https://ghotimarket.com/amrweb/banner1.png'];
 
     const primaryImage = images[0];
-    const productSlug = product.slug || generateSlug(product.productName);
+    const productSlug = product.productSlug || generateSlug(product.productName);
 
-    const basePrice = product.productPrice || 0;
-    const oldPrice = product.oldPrice || 0;
+    const basePrice = Number(product.productPrice) || 0;
+    const oldPrice = Number(product.oldPrice) || 0;
     const hasDiscount = oldPrice > basePrice;
     let saved = 0;
     let percent = 0;
@@ -399,22 +485,23 @@ function createProductCard(product) {
         const imgElement = card.querySelector(`#img-${product.id}`);
         const intervalId = setInterval(() => {
             currentImgIdx = (currentImgIdx + 1) % images.length;
-            imgElement.style.opacity = '0';
-            setTimeout(() => {
-                imgElement.src = images[currentImgIdx];
-                imgElement.style.opacity = '1';
-            }, 200);
+            if (imgElement) {
+                imgElement.style.opacity = '0';
+                setTimeout(() => {
+                    imgElement.src = images[currentImgIdx];
+                    imgElement.style.opacity = '1';
+                }, 200);
+            }
         }, 3500);
 
         sliderIntervals.set(product.id, intervalId);
     }
 
-    // Specific Click Listeners to prevent whole card misclicks
     const detailTriggers = card.querySelectorAll('[data-action="detail"]');
     detailTriggers.forEach(el => {
         el.addEventListener('click', (e) => {
             e.stopPropagation();
-            window.location.href = `product?slug=${productSlug}`;
+            window.location.href = `product?${productSlug}`;
         });
     });
 
@@ -431,7 +518,11 @@ function createProductCard(product) {
         if (addToCartCardBtn) {
             addToCartCardBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                openProductPopup(product, false, 'cart');
+                if (product.variants && product.variants.length > 0) {
+                    openProductPopup(product, false, 'cart');
+                } else {
+                    handleAddToCart(product, {}, 1, addToCartCardBtn);
+                }
             });
         }
 
@@ -439,7 +530,11 @@ function createProductCard(product) {
         if (buyNowCardBtn) {
             buyNowCardBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                openProductPopup(product, false, 'buynow');
+                if (product.variants && product.variants.length > 0) {
+                    openProductPopup(product, false, 'buynow');
+                } else {
+                    handleBuyNow(product, {}, 1, buyNowCardBtn);
+                }
             });
         }
     }
@@ -449,8 +544,8 @@ function createProductCard(product) {
 
 // Open Professional Popup Modal containing variants selection
 function openProductPopup(product, isAlreadyInCart, initialIntent = 'cart') {
-    const basePrice = product.productPrice || 0;
-    const oldPrice = product.oldPrice || 0;
+    const basePrice = Number(product.productPrice) || 0;
+    const oldPrice = Number(product.oldPrice) || 0;
     const hasDiscount = oldPrice > basePrice;
     let saved = hasDiscount ? oldPrice - basePrice : 0;
 
@@ -466,14 +561,7 @@ function openProductPopup(product, isAlreadyInCart, initialIntent = 'cart') {
     let currentQuantity = 1;
 
     function calculatePopupUnitPrice() {
-        let extra = 0;
-        Object.keys(selectedVariants).forEach(groupName => {
-            const valObj = selectedVariants[groupName];
-            if (valObj && typeof valObj.extraPrice === 'number') {
-                extra += valObj.extraPrice;
-            }
-        });
-        return basePrice + extra;
+        return computeUnitPrice(basePrice, selectedVariants);
     }
 
     let variantsHTML = '';
@@ -600,14 +688,14 @@ function openProductPopup(product, isAlreadyInCart, initialIntent = 'cart') {
         const addToCartBtn = document.getElementById('popupAddToCartBtn');
         if (addToCartBtn) {
             addToCartBtn.addEventListener('click', () => {
-                handleAddToCart(product, selectedVariants, currentQuantity);
+                handleAddToCart(product, selectedVariants, currentQuantity, addToCartBtn);
             });
         }
 
         const buyNowBtn = document.getElementById('popupBuyNowBtn');
         if (buyNowBtn) {
             buyNowBtn.addEventListener('click', () => {
-                handleBuyNow(product, selectedVariants, currentQuantity);
+                handleBuyNow(product, selectedVariants, currentQuantity, buyNowBtn);
             });
         }
     }
