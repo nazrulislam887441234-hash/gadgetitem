@@ -5,6 +5,7 @@ import {
 import { 
   getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
 const firebaseConfig = {
   apiKey: "AIzaSyBEZA5iQBxOUJaKvFMtpVi6w-jMATNESoA",
   authDomain: "gadget-item.firebaseapp.com",
@@ -43,6 +44,7 @@ const statusMessage = document.getElementById('statusMessage');
 const statusIcon = document.getElementById('statusIcon');
 const cartBadge = document.getElementById('cartBadge');
 const authModal = document.getElementById('authModal');
+const addToCartBtn = document.getElementById('addToCartBtn');
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', async () => {
@@ -73,6 +75,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   currentProduct = product;
   renderProductUI(product);
   updateSEO(product);
+  
+  // Check if already in cart after user state or product load
+  if (currentUser) {
+    await checkIfAlreadyInCart();
+  }
+
   await loadSuggestedProducts(product.categoryId, product.id);
 });
 
@@ -81,18 +89,15 @@ function extractSlugFromURL() {
   const search = window.location.search;
   if (!search || search.length <= 1) return null;
 
-  // Extract first parameter key
   const queryWithoutQuestion = search.substring(1);
   const firstParam = queryWithoutQuestion.split('&')[0];
   let rawKey = firstParam.split('=')[0];
 
   rawKey = decodeURIComponent(rawKey).trim();
 
-  // Exclude tracking params
   const trackingParams = ['fbclid', 'gclid', 'utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term', 'ref'];
   if (trackingParams.includes(rawKey.toLowerCase())) return null;
 
-  // Normalize slug: remove trailing -true or =
   let normalized = rawKey.replace(/-true$/i, '');
   return normalized || null;
 }
@@ -119,10 +124,8 @@ function renderProductUI(product) {
   skeletonLoader.classList.add('hidden');
   productContent.classList.remove('hidden');
 
-  // Title & Basic Info
   document.getElementById('productTitle').textContent = product.productName || 'Untitled Product';
 
-  // Category Name Fetch
   if (product.categoryId) {
     fetchCategoryName(product.categoryId);
   } else if (product.categoryName) {
@@ -130,13 +133,11 @@ function renderProductUI(product) {
     document.getElementById('categoryValue').textContent = product.categoryName;
   }
 
-  // SKU
   if (product.SKU) {
     document.getElementById('skuWrapper').classList.remove('hidden');
     document.getElementById('skuValue').textContent = product.SKU;
   }
 
-  // Warranty & Delivery Badges
   if (product.warranty) {
     document.getElementById('warrantyBadge').classList.remove('hidden');
     document.getElementById('warrantyText').textContent = `Warranty: ${product.warranty}`;
@@ -145,22 +146,14 @@ function renderProductUI(product) {
     document.getElementById('deliveryBadge').classList.remove('hidden');
   }
 
-  // Description
   if (product.productDescription) {
     descriptionCard.classList.remove('hidden');
     document.getElementById('productDescription').textContent = product.productDescription;
   }
 
-  // Countdown Offer
   initCountdown(product.offerTime);
-
-  // Gallery & Video
   setupGallery(product.productImage || [], product.videoLink);
-
-  // Variants Render
   renderVariants(product.variants || []);
-
-  // Pricing Calculation
   updateCalculatedPrice();
 }
 
@@ -174,10 +167,8 @@ function updateCalculatedPrice() {
   });
 
   const finalUnitPrice = basePrice + extraSum;
-
   document.getElementById('currentPrice').textContent = `৳${finalUnitPrice.toLocaleString()}`;
 
-  // Discount Calculation
   const oldPrice = Number(currentProduct.oldPrice) || 0;
   const oldPriceElem = document.getElementById('oldPrice');
   const discountBadge = document.getElementById('discountBadge');
@@ -209,7 +200,7 @@ function renderVariants(variants) {
 
   if (!variants || variants.length === 0) return;
 
-  variants.forEach((group, index) => {
+  variants.forEach((group) => {
     const groupDiv = document.createElement('div');
     groupDiv.className = 'variant-group';
 
@@ -229,7 +220,6 @@ function renderVariants(variants) {
       btn.innerHTML = `<span>${escapeHTML(valObj.value)}${extraTxt}</span><span class="chk-icon hidden">${SVG_CHECK}</span>`;
 
       btn.addEventListener('click', () => {
-        // Toggle selection inside this group
         optionsDiv.querySelectorAll('.variant-chip').forEach(c => {
           c.classList.remove('selected');
           c.querySelector('.chk-icon').classList.add('hidden');
@@ -258,7 +248,6 @@ function setupGallery(images, videoLink) {
   const nextBtn = document.getElementById('nextBtn');
   const tabVideo = document.getElementById('tabVideo');
   const tabImages = document.getElementById('tabImages');
-  const sliderViewport = document.getElementById('sliderViewport');
   const videoContainer = document.getElementById('videoContainer');
 
   track.innerHTML = '';
@@ -268,7 +257,6 @@ function setupGallery(images, videoLink) {
   const imgList = images.length > 0 ? images : [fallbackImg];
 
   imgList.forEach((src, idx) => {
-    // Slide Item
     const slide = document.createElement('div');
     slide.className = 'slide-item';
     const img = document.createElement('img');
@@ -279,7 +267,6 @@ function setupGallery(images, videoLink) {
     slide.appendChild(img);
     track.appendChild(slide);
 
-    // Thumbnail Item
     const thumb = document.createElement('div');
     thumb.className = `thumb-item ${idx === 0 ? 'active' : ''}`;
     thumb.innerHTML = `<img src="${src}" alt="Thumb" onerror="this.src='${fallbackImg}'">`;
@@ -291,7 +278,6 @@ function setupGallery(images, videoLink) {
     thumbList.appendChild(thumb);
   });
 
-  // Slider Navigation
   prevBtn.addEventListener('click', () => {
     currentImageIndex = (currentImageIndex - 1 + imgList.length) % imgList.length;
     updateSliderPosition();
@@ -304,7 +290,6 @@ function setupGallery(images, videoLink) {
     resetAutoSwipe();
   });
 
-  // Handle Video Tab
   if (videoLink && videoLink.includes('embed')) {
     tabVideo.classList.remove('hidden');
     videoContainer.innerHTML = `<iframe src="${videoLink}" title="Product Video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
@@ -406,7 +391,6 @@ async function fetchCategoryName(categoryId) {
 
 // --- Event Listeners ---
 function setupEventListeners() {
-  // Quantity Controls
   document.getElementById('qtyMinus').addEventListener('click', () => {
     if (currentQuantity > 1) {
       currentQuantity--;
@@ -419,20 +403,58 @@ function setupEventListeners() {
     document.getElementById('qtyValue').textContent = currentQuantity;
   });
 
-  // Action Buttons
-  document.getElementById('addToCartBtn').addEventListener('click', () => handleCartOrBuyAction('cart'));
+  addToCartBtn.addEventListener('click', () => handleCartOrBuyAction('cart'));
   document.getElementById('buyNowBtn').addEventListener('click', () => handleCartOrBuyAction('buy'));
 
-  // Auth Modal
   document.getElementById('closeAuthModal').addEventListener('click', () => authModal.classList.add('hidden'));
   document.getElementById('googleSignInBtn').addEventListener('click', handleGoogleLogin);
+}
+
+// --- Check Cart Status & Update UI ---
+async function checkIfAlreadyInCart() {
+  if (!currentUser || !currentProduct) return;
+
+  try {
+    const userCartRef = doc(db, "carts", currentUser.uid);
+    const docSnap = await getDoc(userCartRef);
+
+    if (docSnap.exists()) {
+      const items = docSnap.data().items || [];
+      const exists = items.some(item => item.productId === currentProduct.id);
+      
+      if (exists) {
+        setCartAlreadyAddedUI();
+      } else {
+        setCartDefaultUI();
+      }
+    }
+  } catch (err) {
+    console.error("Error checking cart status:", err);
+  }
+}
+
+function setCartAlreadyAddedUI() {
+  addToCartBtn.classList.add('already-added');
+  addToCartBtn.disabled = true;
+  addToCartBtn.innerHTML = `
+    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    <span>This product already cart added</span>
+  `;
+}
+
+function setCartDefaultUI() {
+  addToCartBtn.classList.remove('already-added');
+  addToCartBtn.disabled = false;
+  addToCartBtn.innerHTML = `
+    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+    <span>Add to Cart</span>
+  `;
 }
 
 // --- Add To Cart & Buy Now Flow ---
 async function handleCartOrBuyAction(actionType) {
   if (!currentProduct || !currentProduct.active) return;
 
-  // Validate Variant Selection
   const requiredGroupCount = currentProduct.variants ? currentProduct.variants.length : 0;
   if (Object.keys(selectedVariants).length < requiredGroupCount) {
     document.getElementById('variantError').classList.remove('hidden');
@@ -457,8 +479,10 @@ async function processCartSaveAndNavigate() {
   } else if (pendingAction === 'cart') {
     if (isDuplicate) {
       showToast("Already cart added");
+      setCartAlreadyAddedUI();
     } else {
       showToast("Added to Cart successfully!");
+      setCartAlreadyAddedUI();
       updateCartBadge();
     }
   }
@@ -479,13 +503,11 @@ async function checkAndSaveToCart() {
       items = docSnap.data().items || [];
     }
 
-    // Check if product already in cart
     const existingIndex = items.findIndex(item => item.productId === currentProduct.id);
     if (existingIndex > -1) {
-      return true; // Already exists
+      return true;
     }
 
-    // Prepare item data
     let basePrice = Number(currentProduct.productPrice) || 0;
     let extraSum = 0;
     Object.values(selectedVariants).forEach(v => extraSum += (Number(v.extraPrice) || 0));
@@ -531,6 +553,7 @@ async function handleGoogleLogin() {
     currentUser = result.user;
     authModal.classList.add('hidden');
     updateCartBadge();
+    await checkIfAlreadyInCart();
 
     if (pendingAction) {
       await processCartSaveAndNavigate();
@@ -543,12 +566,14 @@ async function handleGoogleLogin() {
 
 // --- Firebase Auth Observer ---
 function setupAuthObserver() {
-  onAuthStateChanged(auth, (user) => {
+  onAuthStateChanged(auth, async (user) => {
     currentUser = user;
     if (user) {
       updateCartBadge();
+      await checkIfAlreadyInCart();
     } else {
       cartBadge.textContent = '0';
+      setCartDefaultUI();
     }
   });
 }
@@ -584,14 +609,13 @@ async function loadSuggestedProducts(categoryId, currentId = null) {
 
     let querySnapshot = await getDocs(q);
 
-    // Fallback if category has no other active items
     if (querySnapshot.empty && categoryId) {
       q = query(collection(db, "products"), where("active", "==", true), limit(8));
       querySnapshot = await getDocs(q);
     }
 
     querySnapshot.docs.forEach(docSnap => {
-      if (docSnap.id === currentId) return; // Exclude current product
+      if (docSnap.id === currentId) return;
 
       const data = docSnap.data();
       const card = document.createElement('a');
@@ -635,7 +659,6 @@ function updateSEO(product) {
   updateMetaTag('twitter:description', desc);
   updateMetaTag('twitter:image', img);
 
-  // Dynamic JSON-LD Schema
   const schema = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -660,7 +683,6 @@ function updateMetaTag(name, content, attribute = 'name') {
   }
 }
 
-// --- Error/Status Card State Helper ---
 function showStatusState(title, message) {
   skeletonLoader.classList.add('hidden');
   productContent.classList.add('hidden');
@@ -670,7 +692,6 @@ function showStatusState(title, message) {
   statusMessage.textContent = message;
 }
 
-// --- Toast Helper ---
 function showToast(msg) {
   const container = document.getElementById('toastContainer');
   const toast = document.createElement('div');
