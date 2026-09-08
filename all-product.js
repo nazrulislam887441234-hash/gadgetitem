@@ -256,30 +256,25 @@ function createProductCard(product) {
         percent = Math.round((saved / oldPrice) * 100);
     }
 
-    let actionsHTML = '';
-    if (isAlreadyInCart) {
-        actionsHTML = `
-            <div class="gi-cart-status">This product already added from cart</div>
-            <button class="gi-btn gi-btn-primary buy-now-direct-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                <span>Buy Now</span>
-            </button>
-        `;
-    } else {
-        actionsHTML = `
-            <button class="gi-btn gi-btn-outline add-to-cart-direct-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                <span>Add to Cart</span>
-            </button>
-            <button class="gi-btn gi-btn-primary buy-now-direct-btn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                <span>Buy Now</span>
-            </button>
-        `;
-    }
+    // শর্ত ১ ও ৩ অনুযায়ী: কার্টে যোগ করা থাকলে Add to cart লুকাবে বা দেখাবে না, শুধু Buy Now থাকবে
+    const cardActionsHTML = isAlreadyInCart ? `
+        <button class="gi-btn gi-btn-primary buy-now-direct-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>Buy Now</span>
+        </button>
+    ` : `
+        <button class="gi-btn gi-btn-outline add-to-cart-card-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            <span>Add to cart</span>
+        </button>
+        <button class="gi-btn gi-btn-primary buy-now-card-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>Buy Now</span>
+        </button>
+    `;
 
     const cardHTML = `
-        <div class="gi-card-img-container">
+        <div class="gi-card-img-container product-click-target">
             <img src="${escapeHTML(primaryImage)}" alt="${escapeHTML(product.productName)}" class="gi-card-img" id="img-${product.id}" loading="lazy" onerror="this.src='https://ghotimarket.com/amrweb/banner1.png'">
             <div class="gi-badge-wrapper">
                 ${hasDiscount ? `<span class="gi-badge discount">${percent}% OFF</span>` : ''}
@@ -288,9 +283,9 @@ function createProductCard(product) {
             </div>
         </div>
         <div class="gi-card-content">
-            <h3 class="gi-product-title">${escapeHTML(product.productName)}</h3>
+            <h3 class="gi-product-title product-click-target">${escapeHTML(product.productName)}</h3>
             
-            <div class="gi-pricing-area">
+            <div class="gi-pricing-area product-click-target">
                 <div class="gi-price-row">
                     <span class="gi-current-price">৳${basePrice.toLocaleString()}</span>
                     ${hasDiscount ? `<span class="gi-old-price">৳${oldPrice.toLocaleString()}</span>` : ''}
@@ -299,7 +294,7 @@ function createProductCard(product) {
             </div>
 
             <div class="gi-card-actions">
-                ${actionsHTML}
+                ${cardActionsHTML}
             </div>
         </div>
     `;
@@ -321,16 +316,19 @@ function createProductCard(product) {
         sliderIntervals.set(product.id, intervalId);
     }
 
-    const openPopupHandler = (e) => {
-        e.stopPropagation();
-        openProductPopup(product, isAlreadyInCart);
-    };
+    // শর্ত ৬ অনুযায়ী: প্রোডাক্টে ক্লিক করলে product?slug অর্থাৎ product?i-phone-এ রিডাইরেক্ট করবে
+    card.querySelectorAll('.product-click-target').forEach(el => {
+        el.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const slug = product.productSlug || product.id;
+            window.location.href = `product?${slug}`;
+        });
+    });
 
-    card.addEventListener('click', openPopupHandler);
-
-    const addBtn = card.querySelector('.add-to-cart-direct-btn');
-    if (addBtn) {
-        addBtn.addEventListener('click', async (e) => {
+    // Add to Cart Button Click (শرت ৪)
+    const addToCartBtn = card.querySelector('.add-to-cart-card-btn');
+    if (addToCartBtn) {
+        addToCartBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             if (product.variants && product.variants.length > 0) {
                 openProductPopup(product, isAlreadyInCart);
@@ -345,9 +343,18 @@ function createProductCard(product) {
         });
     }
 
-    const buyBtn = card.querySelector('.buy-now-direct-btn');
-    if (buyBtn) {
-        buyBtn.addEventListener('click', async (e) => {
+    // Direct Buy Now Button Click (শর্ত ৩ ও ৫)
+    const buyNowDirectBtn = card.querySelector('.buy-now-direct-btn');
+    if (buyNowDirectBtn) {
+        buyNowDirectBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            window.location.href = '/checkout';
+        });
+    }
+
+    const buyNowCardBtn = card.querySelector('.buy-now-card-btn');
+    if (buyNowCardBtn) {
+        buyNowCardBtn.addEventListener('click', async (e) => {
             e.stopPropagation();
             if (product.variants && product.variants.length > 0) {
                 openProductPopup(product, isAlreadyInCart);
@@ -418,27 +425,23 @@ function openProductPopup(product, isAlreadyInCart) {
         });
     }
 
-    let popupActionsHTML = '';
-    if (isAlreadyInCart) {
-        popupActionsHTML = `
-            <div class="gi-cart-status">This product already added from cart</div>
-            <button class="gi-btn gi-btn-primary" id="popupBuyNowBtn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                <span>Buy Now</span>
-            </button>
-        `;
-    } else {
-        popupActionsHTML = `
-            <button class="gi-btn gi-btn-outline" id="popupAddToCartBtn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                <span>Add to Cart</span>
-            </button>
-            <button class="gi-btn gi-btn-primary" id="popupBuyNowBtn">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                <span>Buy Now</span>
-            </button>
-        `;
-    }
+    // শর্ত ১ ও ৩ অনুযায়ী পপআপের ভেতরেও বাটন সেটআপ
+    const modalActionsHTML = isAlreadyInCart ? `
+        <div class="gi-cart-status">This product already added from cart</div>
+        <button class="gi-btn gi-btn-primary" id="popupBuyNowBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>Buy Now</span>
+        </button>
+    ` : `
+        <button class="gi-btn gi-btn-outline" id="popupAddToCartBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+            <span>Add to Cart</span>
+        </button>
+        <button class="gi-btn gi-btn-primary" id="popupBuyNowBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            <span>Buy Now</span>
+        </button>
+    `;
 
     modalBodyContent.innerHTML = `
         <h2 class="gi-popup-product-title">${escapeHTML(product.productName)}</h2>
@@ -474,7 +477,7 @@ function openProductPopup(product, isAlreadyInCart) {
         <div class="gi-validation-msg" id="popupValidationMsg"></div>
 
         <div class="gi-card-actions">
-            ${popupActionsHTML}
+            ${modalActionsHTML}
         </div>
     `;
 
@@ -561,6 +564,7 @@ async function executeAddToCart(product, selectedVariants, quantity, showSuccess
     try {
         const existingIndex = userCart.items.findIndex(item => item.productId === product.id);
         if (existingIndex > -1) {
+            // শর্ত ২ ও ৪ অনুযায়ী নির্দিষ্ট টেক্সট
             showToast('This product already added from cart', 'error');
             return;
         }
@@ -602,7 +606,8 @@ async function executeAddToCart(product, selectedVariants, quantity, showSuccess
 
         updateCartBadgeCount();
         if (showSuccessToast) {
-            showToast('This product already added from cart', 'success');
+            // শর্ত ২ ও ৪ অনুযায়ী সফল মেসেজ
+            showToast('This product already added from cart!', 'success');
         }
         renderProducts(true);
     } catch (error) {
