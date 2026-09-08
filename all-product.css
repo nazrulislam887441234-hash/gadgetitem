@@ -297,7 +297,6 @@ ul {
     box-shadow: var(--gi-shadow);
     transition: var(--gi-transition);
     position: relative;
-    cursor: pointer;
 }
 
 .gi-product-card:hover {
@@ -313,6 +312,7 @@ ul {
     aspect-ratio: 1 / 1;
     background-color: #f1f5f9;
     overflow: hidden;
+    cursor: pointer;
 }
 
 .gi-card-img {
@@ -330,6 +330,7 @@ ul {
     flex-direction: column;
     gap: 6px;
     z-index: 2;
+    pointer-events: none;
 }
 
 .gi-badge {
@@ -372,6 +373,11 @@ ul {
     -webkit-box-orient: vertical;
     overflow: hidden;
     height: 2.8em;
+    cursor: pointer;
+}
+
+.gi-product-title:hover {
+    color: var(--gi-primary);
 }
 
 /* Pricing Area */
@@ -461,6 +467,18 @@ ul {
     border-radius: 8px;
     text-align: center;
     border: 1px solid rgba(0, 102, 255, 0.2);
+}
+
+.gi-card-action-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+@media (max-width: 480px) {
+    .gi-card-action-row {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Popup Modal Styles */
