@@ -1,14 +1,21 @@
+/**
+ * ==========================================
+ * GADGETA ITEM - AUTHENTICATION LOGIC JS
+ * ==========================================
+ */
+
 document.addEventListener('DOMContentLoaded', () => {
     // 1. FIREBASE CONFIGURATION & INITIALIZATION
     const firebaseConfig = {
-        apiKey: "AIzaSyBEZA5iQBxOUJaKvFMtpVi6w-jMATNESoA",
-        authDomain: "gadget-item.firebaseapp.com",
-        projectId: "gadget-item",
-        storageBucket: "gadget-item.firebasestorage.app",
-        messagingSenderId: "1048854789116",
-        appId: "1:1048854789116:web:91c20aa6dd633815be5079",
-        measurementId: "G-2YMX097PSJ"
-    };
+  apiKey: "AIzaSyBEZA5iQBxOUJaKvFMtpVi6w-jMATNESoA",
+  authDomain: "gadget-item.firebaseapp.com",
+  projectId: "gadget-item",
+  storageBucket: "gadget-item.firebasestorage.app",
+  messagingSenderId: "1048854789116",
+  appId: "1:1048854789116:web:91c20aa6dd633815be5079",
+  measurementId: "G-2YMX097PSJ"
+};
+
 
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
@@ -129,9 +136,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (textSpan) textSpan.style.display = 'none';
             if (loaderSpan) {
                 loaderSpan.style.display = 'flex';
-                const spanTxt = loaderSpan.childNodes[2];
-                if (spanTxt && spanTxt.nodeType === Node.TEXT_NODE) {
-                    spanTxt.textContent = ` ${customText}`;
+                // Safe way to update loader text without dropping child nodes
+                const textNode = Array.from(loaderSpan.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
+                if (textNode) {
+                    textNode.textContent = ` ${customText}`;
                 }
             }
         } else {
@@ -174,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (errorEl && inputEl) {
             errorEl.textContent = message;
             errorEl.classList.add('visible');
-            inputEl.style.borderColor = 'var(--gi-danger, #ff4d4f)';
+            inputEl.style.borderColor = '#ef4444';
         }
     }
 
@@ -293,7 +301,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             btnElement.disabled = false;
             btnElement.innerHTML = originalHTML;
-            showAlert('error', getFriendlyErrorMessage(error.code), 'login');
+            showAlert('error', getFriendlyErrorMessage(error.code) || 'Google sign-in could not be completed. Please try again.', 'login');
         }
     }
 
