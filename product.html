@@ -1,240 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gadgets Item - Product Details</title>
-    <!-- Dynamic Meta Tags will be injected via JS -->
-    <meta name="description" content="View product details on Gadgets Item">
-    <link rel="canonical" href="">
-    <link rel="icon" type="image/png" href="https://store.ghotimarket.com/amrweb/website-logo.png">
-    
-    <!-- Open Graph Metadata -->
-    <meta property="og:title" content="Gadgets Item">
-    <meta property="og:description" content="Explore products on Gadgets Item">
-    <meta property="og:image" content="https://ghotimarket.com/amrweb/banner1.png">
-    <meta property="og:url" content="">
-    <meta property="og:type" content="product">
-    <meta property="og:site_name" content="Gadgets Item">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loading Product... | Gadgeta Item</title>
+  <meta name="description" content="Discover premium products at Gadgeta Item.">
+  <link rel="icon" type="image/png" href="https://store.ghotimarket.com/amrweb/website-logo.png">
+  <link rel="canonical" href="">
 
-    <!-- Twitter Card Metadata -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Gadgets Item">
-    <meta name="twitter:description" content="Explore products on Gadgets Item">
-    <meta name="twitter:image" content="https://ghotimarket.com/amrweb/banner1.png">
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Gadgeta Item">
+  <meta property="og:description" content="Discover premium products at Gadgeta Item.">
+  <meta property="og:image" content="https://ghotimarket.com/amrweb/banner1.png">
+  <meta property="og:url" content="">
+  <meta property="og:site_name" content="Gadgeta Item">
 
-    <link rel="stylesheet" href="product.css">
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Gadgeta Item">
+  <meta name="twitter:description" content="Discover premium products at Gadgeta Item.">
+  <meta name="twitter:image" content="https://ghotimarket.com/amrweb/banner1.png">
+
+  <!-- Dynamic JSON-LD Schema Placeholder -->
+  <script type="application/ld+json" id="product-schema"></script>
+
+  <link rel="stylesheet" href="product.css">
 </head>
 <body>
 
-    <!-- ================= PAGE HEADER ================= -->
-    <header class="store-header">
-        <div class="header-container">
-            <div class="header-logo">
-                <a href="/">
-                    <img src="https://store.ghotimarket.com/amrweb/watermark.png" alt="Gadgets Item" loading="lazy">
-                </a>
-            </div>
-            <div class="header-actions">
-                <a href="/cart" class="header-cart-btn" aria-label="Cart">
-                    <svg class="icon" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="9" cy="21" r="1"></circle>
-                        <circle cx="20" cy="21" r="1"></circle>
-                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-                    </svg>
-                    <span class="cart-label">CART</span>
-                    <span class="cart-count-badge" id="headerCartCount">0</span>
-                </a>
-            </div>
-        </div>
-    </header>
-
-    <!-- ================= MAIN CONTENT ================= -->
-    <main class="main-content-wrapper">
-        <div id="loadingSkeleton" class="loading-skeleton">
-            <div class="skeleton-gallery"></div>
-            <div class="skeleton-details">
-                <div class="skeleton-line title"></div>
-                <div class="skeleton-line short"></div>
-                <div class="skeleton-line price"></div>
-                <div class="skeleton-line block"></div>
-            </div>
-        </div>
-
-        <div id="errorState" class="error-state hidden">
-            <svg class="error-icon" viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-            <h2 id="errorTitle">Product Not Found</h2>
-            <p id="errorMessage">The requested product could not be loaded or is currently unavailable.</p>
-            <a href="/all-product" id="errorActionBtn" class="primary-btn">Browse All Products</a>
-        </div>
-
-        <div id="productContainer" class="product-container hidden">
-            <!-- Top Product Section: Gallery & Buying Box -->
-            <div class="product-grid-layout">
-                
-                <!-- Left: Product Image Gallery -->
-                <div class="product-gallery-section">
-                    <div class="main-image-wrapper" id="mainImageWrapper">
-                        <img id="mainProductImage" src="" alt="Product Image" loading="lazy">
-                        <button class="gallery-nav-btn prev-btn" id="prevImageBtn" aria-label="Previous Image">
-                            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                        </button>
-                        <button class="gallery-nav-btn next-btn" id="nextImageBtn" aria-label="Next Image">
-                            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                        </button>
-                    </div>
-                    <div class="thumbnail-strip" id="thumbnailStrip">
-                        <!-- Dynamic Thumbnails -->
-                    </div>
-                </div>
-
-                <!-- Right: Product Info & Actions -->
-                <div class="product-info-section">
-                    <span class="product-category-badge" id="productCategoryBadge">Category</span>
-                    <h1 class="product-title" id="productTitle">Product Name</h1>
-                    
-                    <div class="product-meta-row">
-                        <span class="sku-text">SKU: <strong id="productSku">---</strong></span>
-                        <span class="warranty-badge" id="warrantyBadgeWrapper" style="display: none;">
-                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                            <span id="productWarranty">---</span>
-                        </span>
-                    </div>
-
-                    <!-- Price Block -->
-                    <div class="product-price-block">
-                        <span class="current-price" id="currentPriceDisplay">৳0</span>
-                        <span class="old-price" id="oldPriceDisplay" style="display: none;">৳0</span>
-                        <span class="discount-badge" id="discountBadge" style="display: none;">0% OFF</span>
-                    </div>
-                    <div class="save-amount-text" id="saveAmountDisplay" style="display: none;">Save ৳0</div>
-
-                    <!-- Live Countdown Timer -->
-                    <div class="offer-countdown-box" id="offerCountdownBox" style="display: none;">
-                        <div class="countdown-title">
-                            <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                            Offer ends in
-                        </div>
-                        <div class="countdown-timer-values" id="countdownValues">02 Days 14 Hours 23 Minutes 08 Seconds</div>
-                    </div>
-
-                    <!-- Dynamic Variants Container -->
-                    <div class="variants-selection-area" id="variantsContainer">
-                        <!-- Dynamically generated variant groups -->
-                    </div>
-
-                    <!-- Quantity Selector -->
-                    <div class="quantity-selector-row">
-                        <span class="quantity-label">Quantity</span>
-                        <div class="quantity-controls">
-                            <button class="qty-btn" id="decreaseQtyBtn" aria-label="Decrease Quantity">
-                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                            </button>
-                            <span id="productQuantityDisplay" class="qty-value">1</span>
-                            <button class="qty-btn" id="increaseQtyBtn" aria-label="Increase Quantity">
-                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Delivery Status -->
-                    <div class="delivery-status-row" id="deliveryStatusRow" style="display: none;">
-                        <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
-                        <span>Delivery Free</span>
-                    </div>
-
-                    <!-- Action Buttons (Active / Inactive Switcher) -->
-                    <div class="product-actions-wrapper" id="activeProductActions">
-                        <button class="action-btn add-to-cart-btn" id="addToCartBtn">
-                            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-                            <span>Add to Cart</span>
-                        </button>
-                        <button class="action-btn buy-now-btn" id="buyNowBtn">
-                            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                            <span>Buy Now</span>
-                        </button>
-                    </div>
-
-                    <!-- Inactive Product Notice -->
-                    <div class="inactive-notice-box hidden" id="inactiveProductNotice">
-                        <h3>This product is currently unavailable.</h3>
-                        <p>Please explore our other products.</p>
-                        <a href="/all-product" class="secondary-btn">View Other Products</a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Product Description & Video Section -->
-            <div class="product-extra-content">
-                <div class="product-description-card" id="descriptionCardWrapper">
-                    <h3>Product Description</h3>
-                    <div class="description-content" id="productDescriptionContent"></div>
-                </div>
-
-                <div class="product-video-card" id="videoCardWrapper" style="display: none;">
-                    <h3>Product Video</h3>
-                    <div class="video-responsive-container">
-                        <iframe id="productVideoIframe" src="" title="Product Video" allowfullscreen loading="lazy"></iframe>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- ================= AUTHENTICATION MODAL ================= -->
-    <div class="auth-modal-overlay hidden" id="authModalOverlay">
-        <div class="auth-modal-card">
-            <button class="auth-close-btn" id="authCloseBtn" aria-label="Close">
-                <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-            </button>
-            <div class="auth-header">
-                <h2>Welcome to Gadgets Item</h2>
-                <p id="authSubtitle">Sign in or create an account to continue</p>
-            </div>
-
-            <div class="auth-error-banner hidden" id="authErrorBanner"></div>
-
-            <!-- Google Login Button -->
-            <button class="google-auth-btn" id="googleLoginBtn">
-                <svg viewBox="0 0 24 24" width="20" height="20">
-                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/>
-                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.11-6.72-4.95H1.23v3.15C3.21 21.37 7.27 24 12 24z"/>
-                    <path fill="#FBBC05" d="M5.28 14.25c-.25-.72-.38-1.49-.38-2.25s.13-1.53.38-2.25V6.6H1.23C.45 8.18 0 9.95 0 12s.45 3.82 1.23 5.4l4.05-3.15z"/>
-                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.27 0 3.21 2.63 1.23 6.6l4.05 3.15c.95-2.84 3.6-4.95 6.72-4.95z"/>
-                </svg>
-                <span>Continue with Google</span>
-            </button>
-
-            <div class="auth-divider">
-                <span>OR</span>
-            </div>
-
-            <!-- Email/Password Form -->
-            <form id="emailAuthForm" class="email-auth-form">
-                <div class="form-group">
-                    <label for="authEmailInput">Email Address</label>
-                    <input type="email" id="authEmailInput" placeholder="name@example.com" required>
-                </div>
-                <div class="form-group">
-                    <label for="authPasswordInput">Password</label>
-                    <input type="password" id="authPasswordInput" placeholder="At least 6 characters" required>
-                </div>
-                <div class="form-group hidden" id="confirmPasswordGroup">
-                    <label for="authConfirmPasswordInput">Confirm Password</label>
-                    <input type="password" id="authConfirmPasswordInput" placeholder="Re-enter password">
-                </div>
-                <button type="submit" class="primary-btn auth-submit-btn" id="authSubmitBtn">Login</button>
-            </form>
-
-            <div class="auth-toggle-row">
-                <span id="authToggleText">Don't have an account?</span>
-                <button type="button" class="auth-toggle-link" id="authToggleLink">Sign Up</button>
-            </div>
-        </div>
+  <!-- Sticky Header -->
+  <header class="header">
+    <div class="header-container">
+      <a href="/gadgetitem/" class="logo-link" aria-label="Gadgeta Item Home">
+        <img src="https://store.ghotimarket.com/amrweb/watermark.png" alt="Gadgeta Item Logo" class="header-logo">
+      </a>
+   <a href="/cart" class="cart-btn-link" aria-label="Shopping Cart">
+  <div class="cart-icon-wrapper">
+    <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="9" cy="21" r="1"></circle>
+      <circle cx="20" cy="21" r="1"></circle>
+      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+    </svg>
+    <span class="cart-badge" id="cartBadge">0</span>
+  </div>
+</a>
     </div>
+  </header>
 
-    <!-- ================= REQUIRED FOOTER ================= -->
-     <footer class="tj-footer">
+  <!-- Main Container -->
+  <main class="main-content">
+    <div class="container">
+
+      <!-- Skeleton Loading State -->
+      <section id="skeletonLoader" class="skeleton-grid" aria-busy="true" aria-live="polite">
+        <div class="skeleton-card skeleton-media"></div>
+        <div class="skeleton-card skeleton-info">
+          <div class="skeleton-line skeleton-title"></div>
+          <div class="skeleton-line skeleton-price"></div>
+          <div class="skeleton-line skeleton-box"></div>
+          <div class="skeleton-line skeleton-btn"></div>
+        </div>
+      </section>
+
+      <!-- Dynamic Product Container -->
+      <section id="productContent" class="product-layout hidden">
+        <!-- Left: Product Media Card -->
+        <div class="media-card card">
+          <div class="media-tabs" id="mediaTabs">
+            <button class="media-tab active" id="tabImages" type="button">
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+              <span>Photos</span>
+            </button>
+            <button class="media-tab hidden" id="tabVideo" type="button">
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+              <span>Video</span>
+            </button>
+          </div>
+
+          <!-- Slider Area -->
+          <div class="slider-viewport" id="sliderViewport">
+            <div class="slider-track" id="sliderTrack"></div>
+            <button class="slider-nav slider-prev" id="prevBtn" aria-label="Previous Image" type="button">
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <button class="slider-nav slider-next" id="nextBtn" aria-label="Next Image" type="button">
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+          </div>
+
+          <!-- Embedded YouTube Video Container -->
+          <div class="video-container hidden" id="videoContainer"></div>
+
+          <!-- Thumbnails -->
+          <div class="thumbnail-list" id="thumbnailList"></div>
+        </div>
+
+        <!-- Right: Product Information Card -->
+        <div class="info-card card">
+          <h1 class="product-title" id="productTitle"></h1>
+
+          <!-- Countdown Banner -->
+          <div class="offer-countdown hidden" id="offerCountdown">
+            <div class="countdown-header">
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              <span>Special Offer Ends In:</span>
+            </div>
+            <div class="countdown-timer">
+              <div class="time-box"><span id="cdDays">00</span><small>Days</small></div>
+              <div class="time-box"><span id="cdHours">00</span><small>Hours</small></div>
+              <div class="time-box"><span id="cdMins">00</span><small>Mins</small></div>
+              <div class="time-box"><span id="cdSecs">00</span><small>Secs</small></div>
+            </div>
+          </div>
+
+          <!-- Pricing Section -->
+          <div class="price-section">
+            <div class="price-display">
+              <span class="current-price" id="currentPrice"></span>
+              <span class="old-price hidden" id="oldPrice"></span>
+              <span class="discount-badge hidden" id="discountBadge"></span>
+            </div>
+            <div class="savings-amount hidden" id="savingsAmount"></div>
+          </div>
+
+          <!-- Meta Badges -->
+          <div class="meta-badges">
+            <div class="badge-item hidden" id="warrantyBadge">
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              <span id="warrantyText"></span>
+            </div>
+            <div class="badge-item hidden" id="deliveryBadge">
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+              <span>Free Delivery</span>
+            </div>
+          </div>
+
+          <!-- Dynamic Variants Container -->
+          <div class="variants-wrapper" id="variantsWrapper"></div>
+          <div class="variant-error hidden" id="variantError">Please select options for all required choices.</div>
+
+          <!-- Quantity Selector -->
+          <div class="quantity-wrapper">
+            <span class="quantity-label">Quantity:</span>
+            <div class="quantity-control">
+              <button class="qty-btn" id="qtyMinus" aria-label="Decrease Quantity" type="button">
+                <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              </button>
+              <span class="qty-value" id="qtyValue">1</span>
+              <button class="qty-btn" id="qtyPlus" aria-label="Increase Quantity" type="button">
+                <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="action-buttons">
+            <button class="btn btn-secondary" id="addToCartBtn" type="button">
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+              <span>Add to Cart</span>
+            </button>
+            <button class="btn btn-primary" id="buyNowBtn" type="button">
+              <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+              <span>Buy Now</span>
+            </button>
+          </div>
+
+          <!-- Product Meta Info -->
+          <div class="meta-footer">
+            <div class="meta-line hidden" id="skuWrapper"><strong>SKU:</strong> <span id="skuValue"></span></div>
+            <div class="meta-line hidden" id="categoryWrapper"><strong>Category:</strong> <span id="categoryValue"></span></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Product Description Card -->
+      <section class="description-card card hidden" id="descriptionCard">
+        <h2 class="section-title">Product Description</h2>
+        <div class="description-body" id="productDescription"></div>
+      </section>
+
+      <!-- Dynamic State Message Card (Missing Slug, Not Found, Inactive) -->
+      <section class="status-card card hidden" id="statusCard">
+        <div class="status-icon" id="statusIcon"></div>
+        <h2 class="status-title" id="statusTitle"></h2>
+        <p class="status-message" id="statusMessage"></p>
+        <a href="/all-product" class="btn btn-primary btn-inline" id="statusBtn">Explore All Products</a>
+      </section>
+
+      <!-- Suggested Products Section -->
+      <section class="suggested-section" id="suggestedSection">
+        <h2 class="section-title">Suggested Products</h2>
+        <div class="suggested-grid" id="suggestedGrid"></div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Auth Required Modal -->
+  <div class="modal-backdrop hidden" id="authModal">
+    <div class="modal-card">
+      <button class="modal-close" id="closeAuthModal" type="button" aria-label="Close modal">
+        <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+      <div class="modal-body">
+        <div class="modal-icon">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+        </div>
+        <h3 class="modal-title">Sign in Required</h3>
+        <p class="modal-desc">Please sign in with Google to save your cart items and complete your purchase seamlessly.</p>
+        <button class="btn btn-google" id="googleSignInBtn" type="button">
+          <svg class="google-svg" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+          <span>Continue with Google</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast-container" id="toastContainer"></div>
+ <footer class="tj-footer">
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
         .tj-footer { --tj-bg: #020817; --tj-blue: #0066ff; --tj-cyan: #00bfff; --tj-text: #ffffff; --tj-muted: #b4c7e8; --tj-border: rgba(255,255,255,.14); position: relative; overflow: hidden; background: radial-gradient(750px 450px at 0% 0%, rgba(0,102,255,.40), transparent 65%), linear-gradient(180deg, #06245b 0%, #031438 48%, #020817 100%); color: var(--tj-text); font-family: 'Hind Siliguri', 'Outfit', sans-serif; padding: 80px 0 0; border-top: 1px solid rgba(0,140,255,.35); isolation: isolate; }
@@ -321,31 +306,36 @@
       </div>
       <script>(function () { const y = document.getElementById("tj-current-year"); if (y) y.textContent = new Date().getFullYear(); })();</script>
     </footer>
-    <!-- ================= REQUIRED MOBILE BOTTOM NAVIGATION ================= -->
-    <nav class="gi-mobile-bottom-nav">
-        <a href="/" class="nav-item">
-            <svg class="icon" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-            <span>HOME</span>
-        </a>
-        <a href="/cart" class="nav-item">
-            <svg class="icon" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
-            <span>CART</span>
-        </a>
-        <a href="/categories" class="nav-item">
-            <svg class="icon" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-            <span>CATEGORIES</span>
-        </a>
-        <a href="/all-product" class="nav-item">
-            <svg class="icon" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-            <span>ALL PRODUCT</span>
-        </a>
-        <a href="/profile" class="nav-item">
-            <svg class="icon" viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2" fill="none"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-            <span>PROFILE</span>
-        </a>
-    </nav>
 
-    <!-- Main JS Module -->
-    <script type="module" src="product.js"></script>
+  <!-- Mobile Bottom Navigation -->
+  <nav class="mobile-nav">
+    <a href="/" class="nav-item">
+      <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+      <span>HOME</span>
+    </a>
+  <a href="/cart" class="nav-item">
+  <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="9" cy="21" r="1"></circle>
+    <circle cx="20" cy="21" r="1"></circle>
+    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+  </svg>
+  <span>CART</span>
+</a>
+    <a href="/categories" class="nav-item">
+      <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      <span>CATEGORIES</span>
+    </a>
+    <a href="/all-product" class="nav-item">
+      <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+      <span>ALL PRODUCT</span>
+    </a>
+    <a href="/profile" class="nav-item">
+      <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+      <span>PROFILE</span>
+    </a>
+  </nav>
+
+  <!-- Modular Firebase Libraries -->
+  <script type="module" src="product.js"></script>
 </body>
 </html>
