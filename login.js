@@ -1,22 +1,14 @@
-/**
- * ==========================================
- * GADGETA ITEM - AUTHENTICATION LOGIC JS
- * ==========================================
- */
-
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. REUSE EXISTING FIREBASE CONFIGURATION OR INITIALIZE SAFELY
-    // Note: Reusing exact project setup. Replace config details if not auto-injected by host platform environment.
+    // 1. FIREBASE CONFIGURATION & INITIALIZATION
     const firebaseConfig = {
-  apiKey: "AIzaSyBEZA5iQBxOUJaKvFMtpVi6w-jMATNESoA",
-  authDomain: "gadget-item.firebaseapp.com",
-  projectId: "gadget-item",
-  storageBucket: "gadget-item.firebasestorage.app",
-  messagingSenderId: "1048854789116",
-  appId: "1:1048854789116:web:91c20aa6dd633815be5079",
-  measurementId: "G-2YMX097PSJ"
-};
-
+        apiKey: "AIzaSyBEZA5iQBxOUJaKvFMtpVi6w-jMATNESoA",
+        authDomain: "gadget-item.firebaseapp.com",
+        projectId: "gadget-item",
+        storageBucket: "gadget-item.firebasestorage.app",
+        messagingSenderId: "1048854789116",
+        appId: "1:1048854789116:web:91c20aa6dd633815be5079",
+        measurementId: "G-2YMX097PSJ"
+    };
 
     if (!firebase.apps.length) {
         firebase.initializeApp(firebaseConfig);
@@ -47,7 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. AUTH STATE LISTENER (Redirect if already logged in)
     auth.onAuthStateChanged((user) => {
         if (user) {
-            // Respect existing project routing convention (/profile)
             window.location.href = '/profile';
         }
     });
@@ -55,18 +46,22 @@ document.addEventListener('DOMContentLoaded', () => {
     // 4. MODE SWITCHING FUNCTIONS (No Page Reload)
     function switchMode(targetSection) {
         [loginSection, signupSection, forgotSection].forEach(section => {
-            section.style.display = 'none';
-            section.classList.remove('active');
+            if (section) {
+                section.style.display = 'none';
+                section.classList.remove('active');
+            }
         });
-        targetSection.style.display = 'block';
-        setTimeout(() => targetSection.classList.add('active'), 10);
+        if (targetSection) {
+            targetSection.style.display = 'block';
+            setTimeout(() => targetSection.classList.add('active'), 10);
+        }
         clearAllAlerts();
     }
 
-    toSignupBtn.addEventListener('click', () => switchMode(signupSection));
-    toLoginBtn.addEventListener('click', () => switchMode(loginSection));
-    forgotPwdTrigger.addEventListener('click', () => switchMode(forgotSection));
-    backToLoginBtn.addEventListener('click', () => switchMode(loginSection));
+    if (toSignupBtn) toSignupBtn.addEventListener('click', () => switchMode(signupSection));
+    if (toLoginBtn) toLoginBtn.addEventListener('click', () => switchMode(loginSection));
+    if (forgotPwdTrigger) forgotPwdTrigger.addEventListener('click', () => switchMode(forgotSection));
+    if (backToLoginBtn) backToLoginBtn.addEventListener('click', () => switchMode(loginSection));
 
     // 5. PASSWORD VISIBILITY TOGGLE
     function setupPasswordToggle(toggleId, inputId) {
@@ -82,12 +77,12 @@ document.addEventListener('DOMContentLoaded', () => {
             inputField.type = isPassword ? 'text' : 'password';
             
             if (isPassword) {
-                eyeIcon.style.display = 'none';
-                eyeOffIcon.style.display = 'block';
+                if (eyeIcon) eyeIcon.style.display = 'none';
+                if (eyeOffIcon) eyeOffIcon.style.display = 'block';
                 toggleBtn.setAttribute('aria-label', 'Hide password');
             } else {
-                eyeIcon.style.display = 'block';
-                eyeOffIcon.style.display = 'none';
+                if (eyeIcon) eyeIcon.style.display = 'block';
+                if (eyeOffIcon) eyeOffIcon.style.display = 'none';
                 toggleBtn.setAttribute('aria-label', 'Show password');
             }
         });
@@ -125,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function setButtonLoading(btn, isLoading, customText = 'Processing...') {
+        if (!btn) return;
         const textSpan = btn.querySelector('.gi-btn-text');
         const loaderSpan = btn.querySelector('.gi-btn-loader');
         
@@ -178,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (errorEl && inputEl) {
             errorEl.textContent = message;
             errorEl.classList.add('visible');
-            inputEl.style.borderColor = 'var(--gi-danger)';
+            inputEl.style.borderColor = 'var(--gi-danger, #ff4d4f)';
         }
     }
 
@@ -188,151 +184,149 @@ document.addEventListener('DOMContentLoaded', () => {
         if (errorEl && inputEl) {
             errorEl.textContent = '';
             errorEl.classList.remove('visible');
-            inputEl.style.borderColor = 'var(--gi-border)';
+            inputEl.style.borderColor = '';
         }
     }
 
     // 9. EMAIL/PASSWORD LOGIN HANDLER
-    loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        clearAlerts('login');
+    if (loginForm) {
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearAlerts('login');
 
-        const email = document.getElementById('gi-login-email').value.trim();
-        const password = document.getElementById('gi-login-password').value;
-        const submitBtn = document.getElementById('gi-login-submit-btn');
+            const emailInput = document.getElementById('gi-login-email');
+            const passwordInput = document.getElementById('gi-login-password');
+            const submitBtn = document.getElementById('gi-login-submit-btn');
 
-        let isValid = true;
-        if (!email || !validateEmail(email)) {
-            showFieldError('gi-login-email', 'Please enter a valid email address.');
-            isValid = false;
-        } else {
-            clearFieldError('gi-login-email');
-        }
+            const email = emailInput ? emailInput.value.trim() : '';
+            const password = passwordInput ? passwordInput.value : '';
 
-        if (!password) {
-            showFieldError('gi-login-password', 'Password is required.');
-            isValid = false;
-        } else {
-            clearFieldError('gi-login-password');
-        }
+            let isValid = true;
+            if (!email || !validateEmail(email)) {
+                showFieldError('gi-login-email', 'Please enter a valid email address.');
+                isValid = false;
+            } else {
+                clearFieldError('gi-login-email');
+            }
 
-        if (!isValid) return;
+            if (!password) {
+                showFieldError('gi-login-password', 'Password is required.');
+                isValid = false;
+            } else {
+                clearFieldError('gi-login-password');
+            }
 
-        setButtonLoading(submitBtn, true, 'Signing in...');
+            if (!isValid) return;
 
-        try {
-            await auth.signInWithEmailAndPassword(email, password);
-            // Redirect is handled automatically by onAuthStateChanged
-        } catch (error) {
-            setButtonLoading(submitBtn, false);
-            showAlert('error', getFriendlyErrorMessage(error.code), 'login');
-        }
-    });
+            setButtonLoading(submitBtn, true, 'Signing in...');
+
+            try {
+                await auth.signInWithEmailAndPassword(email, password);
+            } catch (error) {
+                setButtonLoading(submitBtn, false);
+                showAlert('error', getFriendlyErrorMessage(error.code), 'login');
+            }
+        });
+    }
 
     // 10. EMAIL/PASSWORD SIGNUP HANDLER
-    signupForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        clearAlerts('signup');
+    if (signupForm) {
+        signupForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearAlerts('signup');
 
-        const fullName = document.getElementById('gi-signup-name').value.trim();
-        const email = document.getElementById('gi-signup-email').value.trim();
-        const password = document.getElementById('gi-signup-password').value;
-        const confirmPassword = document.getElementById('gi-signup-confirm-password').value;
-        const submitBtn = document.getElementById('gi-signup-submit-btn');
+            const emailInput = document.getElementById('gi-signup-email');
+            const passwordInput = document.getElementById('gi-signup-password');
+            const confirmPasswordInput = document.getElementById('gi-signup-confirm-password');
+            const submitBtn = document.getElementById('gi-signup-submit-btn');
 
-        let isValid = true;
+            const email = emailInput ? emailInput.value.trim() : '';
+            const password = passwordInput ? passwordInput.value : '';
+            const confirmPassword = confirmPasswordInput ? confirmPasswordInput.value : '';
 
-        if (!fullName) {
-            showFieldError('gi-signup-name', 'Full name is required.');
-            isValid = false;
-        } else {
-            clearFieldError('gi-signup-name');
-        }
+            let isValid = true;
 
-        if (!email || !validateEmail(email)) {
-            showFieldError('gi-signup-email', 'Please enter a valid email address.');
-            isValid = false;
-        } else {
-            clearFieldError('gi-signup-email');
-        }
-
-        if (!password || password.length < 6) {
-            showFieldError('gi-signup-password', 'Password must be at least 6 characters.');
-            isValid = false;
-        } else {
-            clearFieldError('gi-signup-password');
-        }
-
-        if (password !== confirmPassword) {
-            showFieldError('gi-signup-confirm-password', 'Passwords do not match.');
-            isValid = false;
-        } else {
-            clearFieldError('gi-signup-confirm-password');
-        }
-
-        if (!isValid) return;
-
-        setButtonLoading(submitBtn, true, 'Creating account...');
-
-        try {
-            const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-            if (userCredential.user) {
-                await userCredential.user.updateProfile({
-                    displayName: fullName
-                });
+            if (!email || !validateEmail(email)) {
+                showFieldError('gi-signup-email', 'Please enter a valid email address.');
+                isValid = false;
+            } else {
+                clearFieldError('gi-signup-email');
             }
-            // Redirect managed by auth state listener to /profile
-        } catch (error) {
-            setButtonLoading(submitBtn, false);
-            showAlert('error', getFriendlyErrorMessage(error.code), 'signup');
-        }
-    });
+
+            if (!password || password.length < 6) {
+                showFieldError('gi-signup-password', 'Password must be at least 6 characters.');
+                isValid = false;
+            } else {
+                clearFieldError('gi-signup-password');
+            }
+
+            if (password !== confirmPassword) {
+                showFieldError('gi-signup-confirm-password', 'Passwords do not match.');
+                isValid = false;
+            } else {
+                clearFieldError('gi-signup-confirm-password');
+            }
+
+            if (!isValid) return;
+
+            setButtonLoading(submitBtn, true, 'Creating account...');
+
+            try {
+                await auth.createUserWithEmailAndPassword(email, password);
+            } catch (error) {
+                setButtonLoading(submitBtn, false);
+                showAlert('error', getFriendlyErrorMessage(error.code), 'signup');
+            }
+        });
+    }
 
     // 11. GOOGLE AUTHENTICATION HANDLER
     async function handleGoogleAuth(btnElement) {
+        if (!btnElement) return;
         clearAllAlerts();
-        const originalText = btnElement.innerHTML;
+        const originalHTML = btnElement.innerHTML;
         btnElement.disabled = true;
 
         try {
             const provider = new firebase.auth.GoogleAuthProvider();
             await auth.signInWithPopup(provider);
-            // Redirect handled by onAuthStateChanged
         } catch (error) {
             btnElement.disabled = false;
-            btnElement.innerHTML = originalText;
-            showAlert('error', 'Google sign-in could not be completed. Please try again.', 'login');
+            btnElement.innerHTML = originalHTML;
+            showAlert('error', getFriendlyErrorMessage(error.code), 'login');
         }
     }
 
-    googleLoginBtn.addEventListener('click', () => handleGoogleAuth(googleLoginBtn));
-    googleSignupBtn.addEventListener('click', () => handleGoogleAuth(googleSignupBtn));
+    if (googleLoginBtn) googleLoginBtn.addEventListener('click', () => handleGoogleAuth(googleLoginBtn));
+    if (googleSignupBtn) googleSignupBtn.addEventListener('click', () => handleGoogleAuth(googleSignupBtn));
 
     // 12. FORGOT PASSWORD HANDLER
-    forgotForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        clearAlerts('forgot');
+    if (forgotForm) {
+        forgotForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            clearAlerts('forgot');
 
-        const email = document.getElementById('gi-forgot-email').value.trim();
-        const submitBtn = document.getElementById('gi-forgot-submit-btn');
+            const emailInput = document.getElementById('gi-forgot-email');
+            const submitBtn = document.getElementById('gi-forgot-submit-btn');
+            const email = emailInput ? emailInput.value.trim() : '';
 
-        if (!email || !validateEmail(email)) {
-            showFieldError('gi-forgot-email', 'Please enter a valid email address.');
-            return;
-        } else {
-            clearFieldError('gi-forgot-email');
-        }
+            if (!email || !validateEmail(email)) {
+                showFieldError('gi-forgot-email', 'Please enter a valid email address.');
+                return;
+            } else {
+                clearFieldError('gi-forgot-email');
+            }
 
-        setButtonLoading(submitBtn, true, 'Sending link...');
+            setButtonLoading(submitBtn, true, 'Sending link...');
 
-        try {
-            await auth.sendPasswordResetEmail(email);
-            setButtonLoading(submitBtn, false);
-            showAlert('success', 'Password reset instructions have been sent to your email.', 'forgot');
-        } catch (error) {
-            setButtonLoading(submitBtn, false);
-            // For security, handle non-existing emails gracefully without throwing direct enumeration feedback
-            showAlert('success', 'Password reset instructions have been sent to your email.', 'forgot');
-        }
-    });
+            try {
+                await auth.sendPasswordResetEmail(email);
+                setButtonLoading(submitBtn, false);
+                showAlert('success', 'Password reset instructions have been sent to your email.', 'forgot');
+            } catch (error) {
+                setButtonLoading(submitBtn, false);
+                showAlert('success', 'Password reset instructions have been sent to your email.', 'forgot');
+            }
+        });
+    }
 });
