@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, query, where, getDocs, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, query, where, getDocs, doc, setDoc, getDoc, limit, startAfter } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
@@ -26,6 +26,8 @@ let userCartItems = [];
 let currentUser = null;
 let pendingAction = null;
 let sliderIntervals = new Map();
+let lastVisibleDoc = null;
+let hasMoreProducts = true;
 
 // DOM Elements
 const productGrid = document.getElementById('giProductGrid');
@@ -157,17 +159,49 @@ function updateCartBadgeCount() {
     if(navBadge) navBadge.textContent = count;
 }
 
-// Fetch Products from Firestore
-async function loadProducts() {
+// Fetch Products from Firestore with Limit 20
+async function loadProducts(isLoadMore = false) {
     productGrid.style.display = 'grid';
     errorState.style.display = 'none';
-    emptyState.style.display = 'none';
+    if (!isLoadMore) {
+        emptyState.style.display = 'none';
+        allProducts = [];
+        lastVisibleDoc = null;
+        hasMoreProducts = true;
+    }
     
     try {
-        const q = query(collection(db, "products"), where("active", "==", true));
+        let q = query(
+            collection(db, "products"), 
+            where("active", "==", true), 
+            limit(BATCH_LIMIT)
+        );
+
+        if (isLoadMore && lastVisibleDoc) {
+            q = query(
+                collection(db, "products"), 
+                where("active", "==", true), 
+                startAfter(lastVisibleDoc), 
+                limit(BATCH_LIMIT)
+            );
+        }
+
         const querySnapshot = await getDocs(q);
-        allProducts = [];
         
+        if (querySnapshot.empty) {
+            hasMoreProducts = false;
+            if (isLoadMore) {
+                loadMoreContainer.style.display = 'none';
+            }
+            return;
+        }
+
+        lastVisibleDoc = querySnapshot.docs[querySnapshot.docs.length - 1];
+
+        if (querySnapshot.docs.length < BATCH_LIMIT) {
+            hasMoreProducts = false;
+        }
+
         querySnapshot.forEach((docSnap) => {
             allProducts.push({ id: docSnap.id, ...docSnap.data() });
         });
@@ -261,7 +295,7 @@ function renderProducts(reset = false) {
         renderedCount = 0;
     }
 
-    if (filteredProducts.length === 0) {
+    if (filteredProducts.length === 0 && !hasMoreProducts) {
         productGrid.style.display = 'none';
         loadMoreContainer.style.display = 'none';
         emptyState.style.display = 'block';
@@ -279,8 +313,8 @@ function renderProducts(reset = false) {
 
     renderedCount += nextBatch.length;
 
-    // Show or Hide Load More Button based on remaining products
-    if (renderedCount < filteredProducts.length) {
+    // Show or Hide Load More Button based on remaining products or database state
+    if (renderedCount < filteredProducts.length || hasMoreProducts) {
         loadMoreContainer.style.display = 'flex';
     } else {
         loadMoreContainer.style.display = 'none';
@@ -292,6 +326,8 @@ if (loadMoreBtn) {
     loadMoreBtn.addEventListener('click', () => {
         if (renderedCount < filteredProducts.length) {
             renderProducts(false);
+        } else if (hasMoreProducts) {
+            loadProducts(true);
         }
     });
 }
@@ -501,6 +537,7 @@ function createProductCard(product) {
     detailTriggers.forEach(el => {
         el.addEventListener('click', (e) => {
             e.stopPropagation();
+            const productSlug = el.getAttribute('data-slug');
             window.location.href = `product?${productSlug}`;
         });
     });
@@ -645,7 +682,8 @@ function openProductPopup(product, isAlreadyInCart, initialIntent = 'cart') {
     `;
 
     modalBodyContent.querySelectorAll('.gi-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
+        chip.addEventListener('click', (e) => {
+            e.stopPropagation();
             const groupName = chip.getAttribute('data-group');
             const valObj = JSON.parse(chip.getAttribute('data-val'));
             selectedVariants[groupName] = valObj;
@@ -665,13 +703,15 @@ function openProductPopup(product, isAlreadyInCart, initialIntent = 'cart') {
     });
 
     const qtyDisplayEl = document.getElementById('popupQtyDisplay');
-    document.getElementById('popupMinusBtn').addEventListener('click', () => {
+    document.getElementById('popupMinusBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
         if (currentQuantity > 1) {
             currentQuantity--;
             qtyDisplayEl.textContent = currentQuantity;
         }
     });
-    document.getElementById('popupPlusBtn').addEventListener('click', () => {
+    document.getElementById('popupPlusBtn').addEventListener('click', (e) => {
+        e.stopPropagation();
         currentQuantity++;
         qtyDisplayEl.textContent = currentQuantity;
     });
@@ -679,7 +719,8 @@ function openProductPopup(product, isAlreadyInCart, initialIntent = 'cart') {
     if (isAlreadyInCart) {
         const buyNowDirectBtn = document.getElementById('popupBuyNowDirectBtn');
         if (buyNowDirectBtn) {
-            buyNowDirectBtn.addEventListener('click', () => {
+            buyNowDirectBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 closeProductModal();
                 window.location.href = '/checkout';
             });
@@ -687,14 +728,16 @@ function openProductPopup(product, isAlreadyInCart, initialIntent = 'cart') {
     } else {
         const addToCartBtn = document.getElementById('popupAddToCartBtn');
         if (addToCartBtn) {
-            addToCartBtn.addEventListener('click', () => {
+            addToCartBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 handleAddToCart(product, selectedVariants, currentQuantity, addToCartBtn);
             });
         }
 
         const buyNowBtn = document.getElementById('popupBuyNowBtn');
         if (buyNowBtn) {
-            buyNowBtn.addEventListener('click', () => {
+            buyNowBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
                 handleBuyNow(product, selectedVariants, currentQuantity, buyNowBtn);
             });
         }
@@ -729,7 +772,7 @@ if (sortSelect) {
     sortSelect.addEventListener('change', filterAndSortProducts);
 }
 if (retryBtn) {
-    retryBtn.addEventListener('click', loadProducts);
+    retryBtn.addEventListener('click', () => loadProducts(false));
 }
 
 // Google Login Modal Controls
@@ -774,4 +817,4 @@ authModal.addEventListener('click', (e) => {
 });
 
 // Initial Load Execution
-loadProducts();
+loadProducts(false);
