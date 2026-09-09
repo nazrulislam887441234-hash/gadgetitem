@@ -2,7 +2,8 @@
 // 1. FIREBASE CONFIGURATION & INITIALIZATION
 // ==========================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // Reusable Firebase Configuration Object
 const firebaseConfig = {
@@ -18,14 +19,15 @@ const firebaseConfig = {
 // Initialize Firebase securely
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
 // ==========================================
-// 2. CONFIGURATIONS (Banners, Categories, URLs)
+// 2. CONFIGURATIONS & CART / AUTH DYNAMIC STATE
 // ==========================================
 const bannerLinks = [
   "https://store.ghotimarket.com",
   "https://store.ghotimarket.com/all-product",
-  "https://store.ghotimarket.com/special-offer"
+  "https://store.ghotimarket.com/categories"
 ];
 
 const categoryData = [
@@ -37,14 +39,58 @@ const categoryData = [
   { name: "Others Exercise & Gadgets", image: "https://i.ibb.co.com/mVZpWsPB/pngtree-modern-desktop-personal-computer-and-other-gadgets-png-image-15589716.png", link: "category?others" }
 ];
 
-// Product URL generator helper
 function getProductUrl(slug) {
   const cleanSlug = slug && typeof slug === 'string' ? slug.trim() : 'item';
   return `product?${cleanSlug}`;
 }
 
+// Handle dynamic cart/auth state on top header & mobile nav
+function initCartAndAuthSync() {
+  const cartBtn = document.getElementById('giCartActionBtn');
+  const cartCountEl = document.getElementById('giCartCount');
+  const cartIconEl = document.getElementById('giCartOrLoginIcon');
+  const mobCartItem = document.getElementById('giMobCartItem');
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      // User is logged in: point to /cart and show cart icon
+      if (cartBtn) cartBtn.href = "/cart";
+      if (mobCartItem) mobCartItem.href = "/cart";
+      if (cartIconEl) {
+        cartIconEl.innerHTML = `<circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>`;
+      }
+
+      try {
+        const cartDocRef = doc(db, "cart", user.uid);
+        const cartSnap = await getDoc(cartDocRef);
+        if (cartSnap.exists()) {
+          const cartData = cartSnap.data();
+          const items = cartData.items || [];
+          let totalQty = items.reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
+          if (cartCountEl) {
+            cartCountEl.textContent = totalQty;
+            cartCountEl.style.display = totalQty > 0 ? 'inline-block' : 'none';
+          }
+        } else {
+          if (cartCountEl) cartCountEl.style.display = 'none';
+        }
+      } catch (err) {
+        console.error("Error fetching cart count:", err);
+      }
+    } else {
+      // Not logged in: convert cart icon to login/user icon and link to login
+      if (cartBtn) cartBtn.href = "/login";
+      if (mobCartItem) mobCartItem.href = "/login";
+      if (cartIconEl) {
+        cartIconEl.innerHTML = `<path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>`;
+      }
+      if (cartCountEl) cartCountEl.style.display = 'none';
+    }
+  });
+}
+
 // ==========================================
-// 3. HERO BANNER CAROUSEL LOGIC (AUTO & TOUCH SLIDE)
+// 3. HERO BANNER CAROUSEL LOGIC
 // ==========================================
 function initHeroCarousel() {
   const track = document.getElementById('giCarouselTrack');
@@ -55,7 +101,6 @@ function initHeroCarousel() {
   const dotsContainer = document.getElementById('giCarouselDots');
   const dots = Array.from(dotsContainer ? dotsContainer.children : []);
 
-  // Bind configurable banner links safely
   const link1 = document.getElementById('giBannerLink1');
   const link2 = document.getElementById('giBannerLink2');
   const link3 = document.getElementById('giBannerLink3');
@@ -63,7 +108,6 @@ function initHeroCarousel() {
   if (link2) link2.href = bannerLinks[1];
   if (link3) link3.href = bannerLinks[2];
 
-  // Clone first slide for seamless infinite transition
   const firstClone = originalSlides[0].cloneNode(true);
   track.appendChild(firstClone);
 
@@ -93,9 +137,7 @@ function initHeroCarousel() {
         isTransitioning = false;
       }, 500);
     } else {
-      setTimeout(() => {
-        isTransitioning = false;
-      }, 500);
+      setTimeout(() => { isTransitioning = false; }, 500);
     }
   }
 
@@ -118,7 +160,6 @@ function initHeroCarousel() {
     }
   }
 
-  // Dots click navigation
   dots.forEach((dot, index) => {
     dot.addEventListener('click', () => {
       if (isTransitioning) return;
@@ -127,14 +168,12 @@ function initHeroCarousel() {
     });
   });
 
-  // Auto slide interval
   let slideInterval = setInterval(nextSlide, 4500);
   const carouselEl = document.getElementById('giHeroCarousel');
   if (carouselEl) {
     carouselEl.addEventListener('mouseenter', () => clearInterval(slideInterval));
     carouselEl.addEventListener('mouseleave', () => { slideInterval = setInterval(nextSlide, 4500); });
 
-    // Mobile Swipe support
     let touchStartX = 0;
     let touchEndX = 0;
 
@@ -191,7 +230,6 @@ function buildProductCard(product) {
   card.href = getProductUrl(slug);
   card.className = 'gi-product-card';
 
-  // Thumb container
   const thumbWrap = document.createElement('div');
   thumbWrap.className = 'gi-product-thumb';
 
@@ -202,7 +240,6 @@ function buildProductCard(product) {
   img.onerror = function() { this.src = 'https://store.ghotimarket.com/website-logo.png'; };
   thumbWrap.appendChild(img);
 
-  // Discount Calculation & Badge
   const currentPrice = Number(product.productPrice) || 0;
   const oldPrice = Number(product.oldPrice) || 0;
 
@@ -218,7 +255,6 @@ function buildProductCard(product) {
 
   card.appendChild(thumbWrap);
 
-  // Details
   const details = document.createElement('div');
   details.className = 'gi-product-details';
 
@@ -263,7 +299,7 @@ function buildProductCard(product) {
 // ==========================================
 // 6. FETCH PRODUCTS FROM FIRESTORE
 // ==========================================
-async function loadProducts(collectionName, containerId, retryCallback) {
+async function loadProducts(collectionName, containerId) {
   const container = document.getElementById(containerId);
   if (!container) return;
 
@@ -274,11 +310,7 @@ async function loadProducts(collectionName, containerId, retryCallback) {
     container.innerHTML = '';
 
     if (snapshot.empty) {
-      container.innerHTML = `
-        <div class="gi-state-box">
-          <p>No products available yet.</p>
-        </div>
-      `;
+      container.innerHTML = `<div class="gi-state-box"><p>No products available yet.</p></div>`;
       return;
     }
 
@@ -290,11 +322,7 @@ async function loadProducts(collectionName, containerId, retryCallback) {
 
   } catch (error) {
     console.error(`Error loading ${collectionName}:`, error);
-    container.innerHTML = `
-      <div class="gi-state-box">
-        <p>Unable to load products right now. Please try again.</p>
-      </div>
-    `;
+    container.innerHTML = `<div class="gi-state-box"><p>Unable to load products right now. Please try again.</p></div>`;
   }
 }
 
@@ -351,11 +379,7 @@ async function loadYouTubeVideos() {
     container.innerHTML = '';
 
     if (snapshot.empty) {
-      container.innerHTML = `
-        <div class="gi-state-box">
-          <p>No videos available yet.</p>
-        </div>
-      `;
+      container.innerHTML = `<div class="gi-state-box"><p>No videos available yet.</p></div>`;
       return;
     }
 
@@ -396,11 +420,7 @@ async function loadYouTubeVideos() {
 
   } catch (error) {
     console.error("Error loading YouTube videos:", error);
-    container.innerHTML = `
-      <div class="gi-state-box">
-        <p>Unable to load videos right now. Please try again.</p>
-      </div>
-    `;
+    container.innerHTML = `<div class="gi-state-box"><p>Unable to load videos right now. Please try again.</p></div>`;
   }
 }
 
@@ -408,11 +428,11 @@ async function loadYouTubeVideos() {
 // 8. INITIALIZE PAGE APP
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
+  initCartAndAuthSync();
   initHeroCarousel();
   renderCategories();
   initVideoModal();
 
-  // Load Firestore Data Collections
   loadProducts("products", "giRecentProductGrid");
   loadProducts("popular_products", "giPopularProductGrid");
   loadYouTubeVideos();
