@@ -39,7 +39,7 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // Owner Email Configuration (Replace with owner's email)
-const OWNER_EMAIL = "admin@ghotimarket.com"; // এখানে আপনার ওনার ইমেইল সেট করা আছে
+const OWNER_EMAIL = "nazrulislam887441234@gmail.com"; // এখানে আপনার ওনার ইমেইল সেট করা আছে
 
 // ==========================================
 // STATE MANAGEMENT & DOM REFERENCES
