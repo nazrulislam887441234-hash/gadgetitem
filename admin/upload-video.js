@@ -11,10 +11,13 @@ import {
     query, 
     where, 
     getDocs, 
+    getDoc,
     addDoc, 
     updateDoc, 
     deleteDoc, 
     doc, 
+    orderBy,
+    limit,
     serverTimestamp 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -31,10 +34,12 @@ const firebaseConfig = {
   measurementId: "G-2YMX097PSJ"
 };
 
-
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+
+// Owner Constant
+const OWNER_EMAIL = "nazrulislam887441234@gmail.com";
 
 // ==========================================
 // DOM ELEMENTS
@@ -85,9 +90,10 @@ const okLimitBtn = document.getElementById("okLimitBtn");
 
 const toastContainer = document.getElementById("toastContainer");
 
-let currentUserVideos = [];
+let allVideos = [];
 let videoToDeleteId = null;
 let currentSelectedImageFile = null;
+let isAdminOrOwner = false;
 
 // ==========================================
 // TOAST NOTIFICATION SYSTEM
@@ -104,21 +110,42 @@ function showToast(message, type = "success") {
 }
 
 // ==========================================
+// CHECK ADMIN / OWNER PRIVILEGES
+// ==========================================
+async function checkAdminOrOwner(email) {
+    if (!email) return false;
+    if (email === OWNER_EMAIL) return true;
+
+    try {
+        const adminDocRef = doc(db, "admins", email);
+        const adminDocSnap = await getDoc(adminDocRef);
+        if (adminDocSnap.exists() && adminDocSnap.data().active === true) {
+            return true;
+        }
+    } catch (error) {
+        console.error("Error checking admin status:", error);
+    }
+    return false;
+}
+
+// ==========================================
 // AUTHENTICATION OBSERVER
 // ==========================================
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        loginScreen.classList.add("hidden");
-        dashboardScreen.classList.remove("hidden");
         userEmailDisplay.textContent = user.email;
         ownerEmailInput.value = user.email;
-        await fetchUserVideos();
+        isAdminOrOwner = await checkAdminOrOwner(user.email);
+        
+        // Show dashboard/management view if admin/owner, otherwise general view
+        dashboardScreen.classList.remove("hidden");
+        loginScreen.classList.add("hidden");
     } else {
-        dashboardScreen.classList.add("hidden");
-        loginScreen.classList.remove("hidden");
-        videoGrid.innerHTML = "";
-        currentUserVideos = [];
+        isAdminOrOwner = false;
+        dashboardScreen.classList.remove("hidden"); // Keep dashboard visible so anyone can view 10 videos
+        loginScreen.classList.add("hidden");
     }
+    await fetchPublicVideos();
 });
 
 // Password Show/Hide
@@ -210,7 +237,6 @@ function cropImageTo9_16(file) {
                 const canvas = document.createElement("canvas");
                 const ctx = canvas.getContext("2d");
 
-                // Target Aspect Ratio 9:16
                 const targetRatio = 9 / 16;
                 let srcWidth = img.width;
                 let srcHeight = img.height;
@@ -220,16 +246,13 @@ function cropImageTo9_16(file) {
                 const currentRatio = srcWidth / srcHeight;
 
                 if (currentRatio > targetRatio) {
-                    // Image is wider than 9:16, crop width (sides)
                     srcWidth = srcHeight * targetRatio;
                     srcX = (img.width - srcWidth) / 2;
                 } else if (currentRatio < targetRatio) {
-                    // Image is taller than 9:16, crop height (top/bottom)
                     srcHeight = srcWidth / targetRatio;
                     srcY = (img.height - srcHeight) / 2;
                 }
 
-                // Set fixed high quality output resolution for 9:16 (e.g. 720 x 1280)
                 const outputWidth = 720;
                 const outputHeight = 1280;
 
@@ -280,18 +303,19 @@ thumbnailInput.addEventListener("change", async (e) => {
 });
 
 // ==========================================
-// FETCH & RENDER USER VIDEOS
+// FETCH & RENDER VIDEOS (Top 10 for Everyone)
 // ==========================================
-async function fetchUserVideos() {
+async function fetchPublicVideos() {
     try {
         const q = query(
             collection(db, "youtube_video"),
-            where("email", "==", auth.currentUser.email)
+            orderBy("createdAt", "desc"),
+            limit(10)
         );
         const querySnapshot = await getDocs(q);
-        currentUserVideos = [];
+        allVideos = [];
         querySnapshot.forEach((docSnap) => {
-            currentUserVideos.push({ id: docSnap.id, ...docSnap.data() });
+            allVideos.push({ id: docSnap.id, ...docSnap.data() });
         });
 
         renderDashboard();
@@ -302,20 +326,27 @@ async function fetchUserVideos() {
 }
 
 function renderDashboard() {
-    const count = currentUserVideos.length;
+    const count = allVideos.length;
     videoCountStat.textContent = `${count} / 10`;
     videoRemainingStat.textContent = `${10 - count}`;
 
     if (count >= 10) {
         systemStatusText.textContent = "Limit Reached";
         limitStatusCard.style.borderColor = "var(--danger)";
-        videoForm.querySelectorAll("input, button[type='submit']").forEach(el => {
-            if(editingVideoId.value === "") el.disabled = true;
-        });
     } else {
         systemStatusText.textContent = "Active";
         limitStatusCard.style.borderColor = "var(--border)";
-        videoForm.querySelectorAll("input, button[type='submit']").forEach(el => el.disabled = false);
+    }
+
+    // Control form visibility based on admin/owner privileges
+    if (!isAdminOrOwner) {
+        videoForm.querySelectorAll("input, button[type='submit']").forEach(el => el.disabled = true);
+    } else {
+        if (count >= 10 && editingVideoId.value === "") {
+            videoForm.querySelectorAll("input, button[type='submit']").forEach(el => el.disabled = true);
+        } else {
+            videoForm.querySelectorAll("input, button[type='submit']").forEach(el => el.disabled = false);
+        }
     }
 
     videoGrid.innerHTML = "";
@@ -328,13 +359,23 @@ function renderDashboard() {
     emptyState.classList.add("hidden");
     videoGrid.classList.remove("hidden");
 
-    currentUserVideos.forEach((video) => {
+    allVideos.forEach((video) => {
         const card = document.createElement("div");
         card.className = "video-card";
         
         const formattedDate = video.createdAt?.toDate 
             ? video.createdAt.toDate().toLocaleDateString("bn-BD", { year: 'numeric', month: 'short', day: 'numeric' }) 
             : "Recently Added";
+
+        let actionsHTML = "";
+        if (isAdminOrOwner) {
+            actionsHTML = `
+                <div class="card-actions">
+                    <button class="btn btn-outline btn-sm edit-btn" data-id="${video.id}"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
+                    <button class="btn btn-outline-danger btn-sm delete-btn" data-id="${video.id}"><i class="fa-solid fa-trash"></i> Delete</button>
+                </div>
+            `;
+        }
 
         card.innerHTML = `
             <div class="card-player-wrapper">
@@ -345,27 +386,27 @@ function renderDashboard() {
                 <div class="card-meta">
                     <span><i class="fa-regular fa-calendar"></i> ${formattedDate}</span>
                 </div>
-                <div class="card-actions">
-                    <button class="btn btn-outline btn-sm edit-btn" data-id="${video.id}"><i class="fa-solid fa-pen-to-square"></i> Edit</button>
-                    <button class="btn btn-outline-danger btn-sm delete-btn" data-id="${video.id}"><i class="fa-solid fa-trash"></i> Delete</button>
-                </div>
+                ${actionsHTML}
             </div>
         `;
         videoGrid.appendChild(card);
     });
 
-    document.querySelectorAll(".edit-btn").forEach(btn => {
-        btn.addEventListener("click", () => setupEditForm(btn.getAttribute("data-id")));
-    });
-    document.querySelectorAll(".delete-btn").forEach(btn => {
-        btn.addEventListener("click", () => promptDeleteVideo(btn.getAttribute("data-id")));
-    });
+    if (isAdminOrOwner) {
+        document.querySelectorAll(".edit-btn").forEach(btn => {
+            btn.addEventListener("click", () => setupEditForm(btn.getAttribute("data-id")));
+        });
+        document.querySelectorAll(".delete-btn").forEach(btn => {
+            btn.addEventListener("click", () => promptDeleteVideo(btn.getAttribute("data-id")));
+        });
+    }
 }
 
 // ==========================================
 // IMGBB CONFIGURATION & UPLOAD SYSTEM
 // ==========================================
 async function retrieveImgBBAPIKey() {
+    if (!auth.currentUser) return null;
     const q = query(
         collection(db, "imgbb_api"),
         where("uid", "==", auth.currentUser.uid)
@@ -405,7 +446,8 @@ async function uploadThumbnailToImgBB(imageFile) {
 // FORM EDIT / CREATE CONTROLS
 // ==========================================
 function setupEditForm(id) {
-    const video = currentUserVideos.find(v => v.id === id);
+    if (!isAdminOrOwner) return;
+    const video = allVideos.find(v => v.id === id);
     if (!video) return;
 
     editingVideoId.value = video.id;
@@ -415,7 +457,7 @@ function setupEditForm(id) {
 
     videoTitleInput.value = video.title;
     videoLinkInput.value = video.videoLink;
-    ownerEmailInput.value = video.email;
+    ownerEmailInput.value = auth.currentUser ? auth.currentUser.email : "";
     
     videoPreviewIframe.src = video.videoLink;
     videoPreviewContainer.classList.remove("hidden");
@@ -438,7 +480,7 @@ function resetVideoForm() {
     formSectionTitle.textContent = "Add New Video";
     cancelEditBtn.classList.add("hidden");
     saveVideoBtn.querySelector(".btn-text").textContent = "Save Video";
-    ownerEmailInput.value = auth.currentUser.email;
+    ownerEmailInput.value = auth.currentUser ? auth.currentUser.email : "";
     videoPreviewContainer.classList.add("hidden");
     thumbnailPreviewWrapper.classList.add("hidden");
     modalError.classList.add("hidden");
@@ -449,6 +491,11 @@ function resetVideoForm() {
 // Save / Create / Update Video Form Submission
 videoForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (!isAdminOrOwner) {
+        showFormError("আপনার ভিডিও যোগ বা সম্পাদনা করার অনুমতি নেই।");
+        return;
+    }
+
     modalError.classList.add("hidden");
 
     const title = videoTitleInput.value.trim();
@@ -468,7 +515,7 @@ videoForm.addEventListener("submit", async (e) => {
 
     try {
         if (!isEdit) {
-            if (currentUserVideos.length >= 10) {
+            if (allVideos.length >= 10) {
                 limitModal.classList.remove("hidden");
                 return;
             }
@@ -492,7 +539,7 @@ videoForm.addEventListener("submit", async (e) => {
 
             finalThumbnailUrl = await uploadThumbnailToImgBB(currentSelectedImageFile);
         } else if (isEdit) {
-            const existing = currentUserVideos.find(v => v.id === editingVideoId.value);
+            const existing = allVideos.find(v => v.id === editingVideoId.value);
             finalThumbnailUrl = existing.thumbnail;
         }
 
@@ -518,7 +565,7 @@ videoForm.addEventListener("submit", async (e) => {
         }
 
         resetVideoForm();
-        await fetchUserVideos();
+        await fetchPublicVideos();
     } catch (error) {
         console.error("Save error:", error);
         showFormError(error.message || "সংরক্ষণ করতে সমস্যা হয়েছে।");
@@ -536,6 +583,7 @@ function showFormError(msg) {
 // DELETE WORKFLOW
 // ==========================================
 function promptDeleteVideo(id) {
+    if (!isAdminOrOwner) return;
     videoToDeleteId = id;
     deleteModal.classList.remove("hidden");
 }
@@ -549,14 +597,14 @@ function closeDeleteModal() {
 }
 
 confirmDeleteBtn.addEventListener("click", async () => {
-    if (!videoToDeleteId) return;
+    if (!videoToDeleteId || !isAdminOrOwner) return;
 
     setButtonLoading(confirmDeleteBtn, true, "Deleting...");
     try {
         await deleteDoc(doc(db, "youtube_video", videoToDeleteId));
         showToast("ভিডিও সফলভাবে ডিলিট করা হয়েছে", "success");
         closeDeleteModal();
-        await fetchUserVideos();
+        await fetchPublicVideos();
     } catch (error) {
         console.error("Delete error:", error);
         showToast("ডিলিট করতে সমস্যা হয়েছে", "error");
