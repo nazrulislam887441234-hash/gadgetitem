@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Category Management | Gadget Item</title>
+    <meta name="description" content="Manage Gadget Item product categories.">
+    <link rel="icon" type="image/png" href="https://store.ghotimarket.com/amrweb/website-logo.png">
+    <link rel="stylesheet" href="categories.css">
+</head>
+<body>
+
+    <!-- Full Page Loading State -->
+    <div id="auth-loader" class="auth-loader">
+        <div class="loader-content">
+            <svg class="spinner-icon" viewBox="0 0 50 50">
+                <circle cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+            </svg>
+            <h2>Verifying access...</h2>
+            <p>Please wait while we confirm your authentication and permissions.</p>
+        </div>
+    </div>
+
+    <!-- Unauthorized Access State -->
+    <div id="unauthorized-screen" class="unauthorized-screen hidden">
+        <div class="unauthorized-card">
+            <div class="icon-wrapper error-icon-bg">
+                <svg viewBox="0 0 24 24" width="36" height="36" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+            </div>
+            <h1>Access Denied</h1>
+            <p>You do not have permission to access Category Management.</p>
+            <button id="back-to-login-btn" class="btn btn-primary">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+                Back to Login
+            </button>
+        </div>
+    </div>
+
+    <!-- Missing ImgBB API Configuration Banner / Screen -->
+    <div id="missing-api-modal" class="modal-overlay hidden">
+        <div class="modal-container">
+            <div class="modal-header">
+                <h3>ImgBB API Configuration Missing</h3>
+            </div>
+            <div class="modal-body">
+                <p>ImgBB API configuration is missing. Please create an ImgBB API configuration before uploading category images.</p>
+                <div class="missing-requirements">
+                    <p>Required fields:</p>
+                    <ul>
+                        <li>apiKey</li>
+                        <li>email</li>
+                        <li>uid</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="configure-imgbb-btn" class="btn btn-primary">Configure ImgBB API</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Application Wrapper -->
+    <div id="app-container" class="app-container hidden">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-brand">
+                <div class="brand-logo-wrap">
+                    <img src="https://store.ghotimarket.com/amrweb/website-logo.png" alt="Gadget Item Logo">
+                </div>
+                <h2>Gadget Item Category Management</h2>
+            </div>
+            <div class="header-user-panel">
+                <div class="user-info">
+                    <span id="user-role-badge" class="role-badge">ADMIN</span>
+                    <span id="user-email-display" class="user-email">user@example.com</span>
+                </div>
+                <button id="logout-btn" class="btn btn-outline-danger" title="Logout">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    <span>Logout</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="page-actions-bar">
+                <div class="search-box">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" id="search-input" placeholder="Search categories by name or slug...">
+                </div>
+                <button id="open-create-modal-btn" class="btn btn-primary">
+                    <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>Add New Category</span>
+                </button>
+            </div>
+
+            <!-- Categories Display Container -->
+            <section class="categories-section">
+                <div class="section-title-row">
+                    <h3>All Categories</h3>
+                    <span id="category-count" class="category-count">0 items</span>
+                </div>
+
+                <!-- Category Grid / Table Container -->
+                <div id="categories-grid" class="categories-grid">
+                    <!-- Skeletons will show initially -->
+                    <div class="category-card-skeleton"></div>
+                    <div class="category-card-skeleton"></div>
+                    <div class="category-card-skeleton"></div>
+                    <div class="category-card-skeleton"></div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="empty-state" class="empty-state hidden">
+                    <svg viewBox="0 0 24 24" width="48" height="48" stroke="currentColor" stroke-width="1.5" fill="none"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
+                    <h4>No categories found</h4>
+                    <p>Create your first category to get started.</p>
+                </div>
+
+                <!-- Load More Section -->
+                <div id="load-more-container" class="load-more-container hidden">
+                    <button id="load-more-btn" class="btn btn-secondary">Load More</button>
+                    <p id="no-more-text" class="no-more-text hidden">No more categories.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Create/Edit Category Modal -->
+    <div id="category-modal" class="modal-overlay hidden">
+        <div class="modal-container form-modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Create Category</h3>
+                <button id="close-modal-btn" class="btn-icon" aria-label="Close">
+                    <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <form id="category-form">
+                <div class="modal-body">
+                    <input type="hidden" id="category-id-input">
+                    
+                    <div class="form-group">
+                        <label for="category-name">Category Name <span class="required">*</span></label>
+                        <input type="text" id="category-name" placeholder="e.g. iPhone 15 Pro Max" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="category-slug">Category Slug <span class="required">*</span></label>
+                        <input type="text" id="category-slug" placeholder="e.g. iphone-15-pro-max" required>
+                        <small class="form-hint">Auto-generated from name. Editable manually.</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Category Image <span class="required">*</span></label>
+                        <div class="image-upload-wrapper">
+                            <input type="file" id="category-image-file" accept="image/jpeg, image/jpg, image/png, image/webp" class="file-input">
+                            <label for="category-image-file" class="file-drop-zone" id="drop-zone">
+                                <svg viewBox="0 0 24 24" width="28" height="28" stroke="currentColor" stroke-width="1.5" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                                <span id="file-label-text">Choose an image or drag it here</span>
+                                <small>JPG, JPEG, PNG, WEBP</small>
+                            </label>
+                        </div>
+                        <div id="image-preview-container" class="image-preview-container hidden">
+                            <img id="image-preview" src="" alt="Preview">
+                            <div class="preview-info">
+                                <span id="preview-filename">filename.jpg</span>
+                                <span id="upload-status-text" class="upload-status-text">Ready to upload</span>
+                            </div>
+                            <button type="button" id="remove-image-btn" class="btn-icon danger" title="Remove image">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" id="cancel-modal-btn" class="btn btn-outline">Cancel</button>
+                    <button type="submit" id="save-category-btn" class="btn btn-primary">
+                        <span id="save-btn-text">Save Category</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="delete-modal" class="modal-overlay hidden">
+        <div class="modal-container confirm-modal">
+            <div class="modal-body text-center">
+                <div class="icon-wrapper warning-icon-bg">
+                    <svg viewBox="0 0 24 24" width="32" height="32" stroke="currentColor" stroke-width="2" fill="none"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                </div>
+                <h3>Delete Category?</h3>
+                <p>Are you sure you want to permanently delete this category?</p>
+            </div>
+            <div class="modal-footer justify-center">
+                <button id="cancel-delete-btn" class="btn btn-outline">Cancel</button>
+                <button id="confirm-delete-btn" class="btn btn-danger">Delete Category</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Main Script Execution -->
+    <script type="module" src="categories.js"></script>
+</body>
+</html>
