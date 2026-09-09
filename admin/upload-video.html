@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHOTI MARKET - Video Review Manager</title>
+    <link rel="stylesheet" href="upload-video.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- LOGIN SCREEN -->
+    <div id="loginScreen" class="auth-wrapper">
+        <div class="auth-card">
+            <div class="brand-header">
+                <img src="https://store.ghotimarket.com/amrweb/watermark.png" alt="GHOTI MARKET Logo" class="brand-logo">
+                <h1>GHOTI MARKET</h1>
+                <p class="subtitle">Admin Login</p>
+            </div>
+            <form id="loginForm" novalidate>
+                <div class="form-group">
+                    <label for="loginEmail">Email Address</label>
+                    <div class="input-with-icon">
+                        <i class="fa-solid fa-envelope"></i>
+                        <input type="email" id="loginEmail" placeholder="admin@ghotimarket.com" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">Password</label>
+                    <div class="input-with-icon password-container">
+                        <i class="fa-solid fa-lock"></i>
+                        <input type="password" id="loginPassword" placeholder="••••••••" required>
+                        <button type="button" id="togglePassword" class="password-toggle"><i class="fa-solid fa-eye"></i></button>
+                    </div>
+                </div>
+                <div id="loginError" class="error-msg hidden"></div>
+                <button type="submit" id="loginBtn" class="btn btn-primary btn-block">
+                    <span class="btn-text">Login</span>
+                    <span class="spinner hidden"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD -->
+    <div id="dashboardScreen" class="dashboard-wrapper hidden">
+        <!-- HEADER -->
+        <header class="admin-header">
+            <div class="header-left">
+                <img src="https://store.ghotimarket.com/amrweb/watermark.png" alt="GHOTI MARKET Logo" class="header-logo">
+                <span class="header-divider"></span>
+                <h2 class="header-title">Video Review Manager</h2>
+            </div>
+            <div class="header-right">
+                <div class="user-info">
+                    <i class="fa-solid fa-user-shield"></i>
+                    <span id="userEmailDisplay">admin@ghotimarket.com</span>
+                </div>
+                <button id="logoutBtn" class="btn btn-outline-danger btn-sm">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <!-- STATISTICS & LIMIT BAR -->
+            <div class="stats-container">
+                <div class="stat-card">
+                    <div class="stat-icon primary"><i class="fa-solid fa-video"></i></div>
+                    <div class="stat-info">
+                        <h3>Video Slots Used</h3>
+                        <p id="videoCountStat">0 / 10</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon success"><i class="fa-solid fa-circle-check"></i></div>
+                    <div class="stat-info">
+                        <h3>Remaining Slots</h3>
+                        <p id="videoRemainingStat">10</p>
+                    </div>
+                </div>
+                <div class="stat-card limit-card" id="limitStatusCard">
+                    <div class="stat-icon warning"><i class="fa-solid fa-gauge-high"></i></div>
+                    <div class="stat-info">
+                        <h3>System Status</h3>
+                        <p id="systemStatusText">Active</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DIRECT UPLOAD / EDIT FORM -->
+            <section class="upload-section">
+                <div class="section-header">
+                    <h2 id="formSectionTitle">Add New Video</h2>
+                    <button id="cancelEditBtn" class="btn btn-outline btn-sm hidden">Cancel Edit</button>
+                </div>
+                <form id="videoForm" novalidate>
+                    <input type="hidden" id="editingVideoId">
+                    
+                    <div class="form-group">
+                        <label for="videoTitleInput">Video Title <span class="required">*</span></label>
+                        <input type="text" id="videoTitleInput" placeholder="Havit H2232D Wired Headphone Review" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="videoLinkInput">YouTube Video Link <span class="required">*</span></label>
+                        <input type="url" id="videoLinkInput" placeholder="https://www.youtube.com/watch?v=..." required>
+                        <small class="form-hint">Supports standard, short, and embed YouTube links.</small>
+                    </div>
+
+                    <!-- LIVE PREVIEW CONTAINER -->
+                    <div id="videoPreviewContainer" class="form-group hidden">
+                        <label>Live Preview</label>
+                        <div class="preview-frame-wrapper">
+                            <iframe id="videoPreviewIframe" src="" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="thumbnailInput">Thumbnail Image <span id="thumbReqMark" class="required">*</span></label>
+                        <input type="file" id="thumbnailInput" accept="image/jpeg, image/png, image/webp, image/jpg">
+                        <small class="form-hint">Accepted: JPG, JPEG, PNG, WEBP (Automatically cropped to 9:16)</small>
+                    </div>
+
+                    <div id="thumbnailPreviewWrapper" class="form-group hidden">
+                        <label>Selected Thumbnail Preview (9:16)</label>
+                        <img id="thumbnailPreviewImg" src="" alt="Thumbnail Preview" class="thumb-preview-img">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Owner Email</label>
+                        <input type="email" id="ownerEmailInput" readonly class="input-readonly">
+                    </div>
+
+                    <div id="modalError" class="error-msg hidden"></div>
+
+                    <button type="submit" id="saveVideoBtn" class="btn btn-primary">
+                        <span class="btn-text">Save Video</span>
+                        <span class="spinner hidden"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+                    </button>
+                </form>
+            </section>
+
+            <!-- ACTION BAR FOR LIST -->
+            <div class="action-bar">
+                <h2>Manage Reviews</h2>
+            </div>
+
+            <!-- VIDEO GRID -->
+            <div id="videoGrid" class="video-grid">
+                <!-- Dynamically injected video cards -->
+            </div>
+
+            <!-- EMPTY STATE -->
+            <div id="emptyState" class="empty-state hidden">
+                <i class="fa-solid fa-film"></i>
+                <h3>No videos found</h3>
+                <p>আপনার এখনো কোনো ভিডিও যোগ করা হয়নি। ওপরের ফর্ম থেকে ভিডিও যোগ করুন।</p>
+            </div>
+        </main>
+    </div>
+
+    <!-- DELETE CONFIRMATION MODAL -->
+    <div id="deleteModal" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="modal-header delete-header">
+                <h3>ভিডিওটি ডিলিট করবেন?</h3>
+                <button id="closeDeleteModalBtn" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>এই ভিডিওটি স্থায়ীভাবে ডিলিট করা হবে। আপনি কি নিশ্চিত?</p>
+            </div>
+            <div class="modal-footer">
+                <button id="cancelDeleteBtn" class="btn btn-outline">Cancel</button>
+                <button id="confirmDeleteBtn" class="btn btn-danger">
+                    <span class="btn-text">Confirm Delete</span>
+                    <span class="spinner hidden"><i class="fa-solid fa-circle-notch fa-spin"></i></span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 10 VIDEO LIMIT MODAL -->
+    <div id="limitModal" class="modal-backdrop hidden">
+        <div class="modal-card">
+            <div class="modal-header warning-header">
+                <h3>10টি ভিডিও হয়ে গেছে</h3>
+                <button id="closeLimitModalBtn" class="modal-close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <i class="fa-solid fa-triangle-exclamation warning-icon-large"></i>
+                <p style="text-align: center;">আপনার সর্বোচ্চ ১০টি ভিডিও সংরক্ষণ করা হয়েছে। অন্য ভিডিও সংরক্ষণ করতে হলে প্রথমে যেকোনো একটি ভিডিও ডিলিট করতে হবে।</p>
+            </div>
+            <div class="modal-footer justify-center">
+                <button id="okLimitBtn" class="btn btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <!-- Main JavaScript Application File -->
+    <script type="module" src="upload-video.js"></script>
+</body>
+</html>
