@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Categories | Gadgeta Item</title>
+    <meta name="description" content="Explore all product categories at Gadgeta Item and find the gadgets and products you are looking for.">
+    <meta name="robots" content="index, follow">
+    <link rel="icon" href="https://store.ghotimarket.com/amrweb/website-logo.png">
+    <link rel="canonical" href="https://gadgeta-item.com/categories">
+    
+    <!-- Open Graph Metadata -->
+    <meta property="og:title" content="Categories | Gadgeta Item">
+    <meta property="og:description" content="Explore all product categories at Gadgeta Item.">
+    <meta property="og:image" content="https://ghotimarket.com/amrweb/banner1.png">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter Metadata -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Categories | Gadgeta Item">
+    <meta name="twitter:description" content="Explore all product categories at Gadgeta Item.">
+    <meta name="twitter:image" content="https://ghotimarket.com/amrweb/banner1.png">
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="categories.css">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json" id="giStructuredData">
+    {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "name": "Categories | Gadgeta Item",
+        "description": "Explore all product categories at Gadgeta Item.",
+        "url": "https://gadgeta-item.com/categories"
+    }
+    </script>
+</head>
+<body>
+
+    <!-- Header Section -->
+    <header class="gi-header" role="banner">
+        <div class="gi-header-container">
+            <a href="/" class="gi-logo-wrapper" aria-label="Gadgeta Item Home">
+                <img src="https://store.ghotimarket.com/amrweb/website-logo.png" alt="Gadgeta Item Logo" class="gi-logo">
+            </a>
+            <div class="gi-header-actions">
+                <a href="/cart" class="gi-cart-icon-btn" aria-label="Shopping Cart">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                        <circle cx="9" cy="21" r="1"/>
+                        <circle cx="20" cy="21" r="1"/>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                    </svg>
+                    <span class="gi-cart-badge" id="giHeaderCartBadge">0</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="gi-main" role="main">
+        <div class="gi-container">
+            
+            <section class="gi-page-header">
+                <h1 class="gi-page-title">Explore Categories</h1>
+                <p class="gi-page-subtitle">Browse through our extensive collections curated just for you</p>
+            </section>
+
+            <!-- Categories Grid Container -->
+            <div class="gi-category-grid" id="giCategoryGrid">
+                <!-- Skeletons loaded initially via JS -->
+            </div>
+
+            <!-- Error State -->
+            <div class="gi-error-state" id="giErrorState" style="display: none;">
+                <div class="gi-state-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="15" y1="9" x2="9" y2="15"/>
+                        <line x1="9" y1="9" x2="15" y2="15"/>
+                    </svg>
+                </div>
+                <h2>Unable to Load Categories</h2>
+                <p>Something went wrong while loading categories. Please try again.</p>
+                <button class="gi-btn gi-btn-primary" id="giRetryBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="23 4 23 10 17 10"/>
+                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
+                    </svg>
+                    <span>Try Again</span>
+                </button>
+            </div>
+
+            <!-- Empty State -->
+            <div class="gi-empty-state" id="giEmptyState" style="display: none;">
+                <div class="gi-state-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="7" height="7"/>
+                        <rect x="14" y="3" width="7" height="7"/>
+                        <rect x="14" y="14" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                </div>
+                <h2>No Categories Found</h2>
+                <p>There are currently no categories available.</p>
+            </div>
+
+            <!-- Load More Container -->
+            <div class="gi-load-more-container" id="giLoadMoreContainer" style="display: none;">
+                <button class="gi-btn gi-btn-outline" id="giLoadMoreBtn">
+                    <span>Load More Categories</span>
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer Section -->
+     <footer class="tj-footer">
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+        .tj-footer { --tj-bg: #020817; --tj-blue: #0066ff; --tj-cyan: #00bfff; --tj-text: #ffffff; --tj-muted: #b4c7e8; --tj-border: rgba(255,255,255,.14); position: relative; overflow: hidden; background: radial-gradient(750px 450px at 0% 0%, rgba(0,102,255,.40), transparent 65%), linear-gradient(180deg, #06245b 0%, #031438 48%, #020817 100%); color: var(--tj-text); font-family: 'Hind Siliguri', 'Outfit', sans-serif; padding: 80px 0 0; border-top: 1px solid rgba(0,140,255,.35); isolation: isolate; }
+        .tj-container { width: min(92%, 1280px); margin: auto; position: relative; z-index: 2; }
+        .tj-grid { display: grid; grid-template-columns: 1.55fr .8fr 1fr 1.15fr; gap: 55px; }
+        .tj-brand img.tj-logo { width: 190px; height: auto; display: block; margin-bottom: 22px; object-fit: contain; }
+        .tj-desc { color: var(--tj-muted); font-size: 15px; line-height: 1.9; max-width: 390px; margin: 0; }
+        .tj-social { display: flex; align-items: center; gap: 11px; margin-top: 25px; }
+        .tj-social a { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 13px; background: rgba(255,255,255,.12); border: 1px solid var(--tj-border); transition: .3s; }
+        .tj-social svg { width: 19px; height: 19px; fill: #ffffff; }
+        .tj-title { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; margin-bottom: 25px; padding-bottom: 13px; color: #ffffff; position: relative; }
+        .tj-title::after { content: ""; position: absolute; left: 0; bottom: 0; width: 48px; height: 3px; background: linear-gradient(90deg, #1683ff, #00c8ff); border-radius: 20px; }
+        .tj-links { list-style: none; padding: 0; margin: 0; }
+        .tj-links li { margin-bottom: 12px; }
+        .tj-links a { display: inline-flex; align-items: center; gap: 9px; color: var(--tj-muted); text-decoration: none; font-size: 14.5px; transition: .25s; }
+        .tj-links a svg { width: 15px; height: 15px; opacity: .55; }
+        .tj-links a:hover { color: #ffffff; transform: translateX(5px); }
+        .tj-contact-item { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; color: var(--tj-muted); font-size: 14.5px; }
+        .tj-contact-item svg { width: 19px; height: 19px; flex-shrink: 0; fill: #00c8ff; }
+        .tj-contact-item a { color: inherit; text-decoration: none; }
+        .tj-pay { margin-top: 23px; display: flex; align-items: flex-start; gap: 10px; padding: 15px 17px; border-radius: 14px; background: rgba(0,119,255,.18); border: 1px solid rgba(0,191,255,.22); color: var(--tj-muted); font-size: 13px; }
+        .tj-pay svg { width: 19px; height: 19px; flex-shrink: 0; }
+        .tj-bottom { margin-top: 65px; padding: 26px 0; border-top: 1px solid rgba(255,255,255,.12); display: flex; align-items: center; justify-content: space-between; color: var(--tj-muted); font-size: 13.5px; }
+        .tj-dev { display: flex; align-items: center; gap: 16px; }
+        .tj-dev span { color: #c7d7f5; font-size: 15px; }
+        .tj-dev img { height: 42px; width: auto; object-fit: contain; }
+        @media (max-width: 1100px) { .tj-grid { grid-template-columns: 1.4fr 1fr 1fr; gap: 45px; } .tj-brand { grid-column: 1 / -1; } }
+        @media (max-width: 750px) { .tj-grid { grid-template-columns: 1fr 1fr; gap: 40px 30px; } .tj-bottom { flex-direction: column; text-align: center; gap: 20px; } }
+        @media (max-width: 520px) { .tj-grid { grid-template-columns: 1fr; } }
+      </style>
+
+      <div class="tj-container">
+        <div class="tj-grid">
+          <div class="tj-brand">
+            <img src="https://store.ghotimarket.com/amrweb/white-watermark.png" alt="Gadgets Item" class="tj-logo">
+            <p class="tj-desc">Explore the latest and useful gadgets at Gadgets Item. From smart accessories to power solutions, creator gear, gaming essentials and more—all in one trusted gadget hub.</p>
+            <div class="tj-social">
+              <a href="https://facebook.com/amrweb" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24"><path d="M14 8h-2a1 1 0 0 0-1 1v2h3l-1 3h-2v5h-3v-5H6v-3h2V9a3 3 0 0 1 3-3h3v2z"/></svg></a>
+              <a href="https://youtube.com/@AMR_Technology_nazrul" target="_blank" rel="noopener" aria-label="YouTube"><svg viewBox="0 0 24 24"><path d="M21.6 7.2a3 3 0 0 0-2.1-2.1C18 4.5 12 4.5 12 4.5s-6 0-7.5.6A3 3 0 0 0 2.4 7.2 31 31 0 0 0 2 12a31 31 0 0 0 .4 4.8 3 3 0 0 0 2.1 2.1c1.5.6 7.5.6 7.5.6s6 0 7.5-.6a3 3 0 0 0 2.1-2.1A31 31 0 0 0 22 12a31 31 0 0 0-.4-4.8zM10 15V9l5 3-5 3z"/></svg></a>
+              <a href="https://wa.me/8801845613768" target="_blank" rel="noopener" aria-label="WhatsApp"><svg viewBox="0 0 24 24"><path d="M19.1 4.7A9.9 9.9 0 0 0 12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.5 1.4 5L2 22l5.2-1.4A9.9 9.9 0 0 0 12 22c5.5 0 10-4.5 10-10 0-2.7-1-5.1-2.9-7.3zM12 20a8 8 0 0 1-4.1-1.1l-.3-.2-3.1.8.8-3-.2-.3A8 8 0 0 1 12 4a8 8 0 0 1 8 8c0 4.4-3.6 8-8 8zm4.6-6c-.2-.1-1.3-.6-1.5-.7-.2-.1-.4-.1-.5.1-.2.2-.6.7-.7.8-.1.2-.3.2-.5.1-.2-.1-1-.4-1.9-1.2-.7-.6-1.2-1.4-1.3-1.6-.1-.2 0-.4.1-.5l.4-.5c.1-.1.1-.2.2-.3 0-.1 0-.2 0-.3 0-.1-.5-1.3-.7-1.7-.2-.4-.4-.5-.4h-.4c-.1 0-.3 0-.5.2-.2.2-.6.6-.6 1.5s.6 1.7.7 1.8c.1.1 1.2 1.9 3 2.6 1.8.7 1.8.5 2.1.4.3 0 1.3-.5 1.5-1 .2-.5.2-.9.1-1 0 0-.1-.1-.3-.2z"/></svg></a>
+            </div>
+          </div>
+
+          <div>
+            <div class="tj-title">Quick Links</div>
+            <ul class="tj-links">
+              <li><a href="/shop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>Shop</a></li>
+              <li><a href="/offers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>Offers</a></li>
+              <li><a href="/brands"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>Brands</a></li>
+              <li><a href="/my-account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>Account</a></li>
+              <li><a href="/trending"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>Top Trending</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <div class="tj-title">Informations</div>
+            <ul class="tj-links">
+              <li><a href="/about-us"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>About Us</a></li>
+              <li><a href="/support"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>Contact Us</a></li>
+              <li><a href="/privacy-policy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>Privacy Policy</a></li>
+              <li><a href="/refund-return"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>Refund & Return</a></li>
+              <li><a href="/shipping-delivery"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>Shipping & Delivery</a></li>
+              <li><a href="/terms"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>Terms & Conditions</a></li>
+              <li><a href="/warranty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>Warranty Policy</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <div class="tj-title">Get in touch</div>
+            <div class="tj-contact-item"><svg viewBox="0 0 24 24"><path d="M6.6 10.8a15.1 15.1 0 0 0 6.6 6.6l2.2-2.2c.3-.3.7-.4 1.1-.3 1.2.4 2.5.6 3.8.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.3 21 3 13.7 3 4.8c0-.6.4-1 1-1h2.5c.6 0 1 .4 1 1 0 1.3.2 2.6.6 3.8.1.4 0 .8-.3 1.1l-2.2 2.2z"/></svg><a href="tel:+8801727003670"><b>+880 1727-003670</b></a></div>
+            <div class="tj-contact-item"><svg viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4-8 5L4 8V6l8 5 8-5v2z"/></svg><a href="mailto:nazrulislam887441234@gmail.com">nazrulislam887441234@gmail.com</a></div>
+            <div class="tj-contact-item"><svg viewBox="0 0 24 24"><path d="M12 2C8.1 2 5 5.1 5 9c0 5.2 7 13 7 13s7-7.8 7-13c0-3.9-3.1-7-7-7zm0 9.5c-1.4 0-2.5-1.1-2.5-2.5S10.6 6.5 12 6.5s2.5 1.1 2.5 2.5S13.4 11.5 12 11.5z"/></svg><span>Chhatak, sylhet, Bangladesh</span></div>
+            <div class="tj-pay"><svg viewBox="0 0 24 24" fill="#00c8ff"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm1 15h-2v-6h2zm0-8h-2V7h2z"/></svg><span>Cash on Delivery · bKash · Nagad · Bank payment</span></div>
+          </div>
+        </div>
+
+        <div class="tj-bottom">
+          <div class="tj-copyright">© <span id="tj-current-year"></span> | Gadgets Item - All Rights Reserved</div>
+          <div class="tj-dev">
+            <span>Design &amp; Developed by</span>
+            <a href="https://store.ghotimarket.com/amrweb/developer" aria-label="Developer"><img src="https://store.ghotimarket.com/amrweb/developer.png" alt="Developer"></a>
+          </div>
+        </div>
+      </div>
+      <script>(function () { const y = document.getElementById("tj-current-year"); if (y) y.textContent = new Date().getFullYear(); })();</script>
+    </footer>
+    <!-- Mobile Bottom Navigation -->
+    <nav class="gi-mobile-bottom-nav" aria-label="Mobile Navigation">
+        <a href="/" class="gi-mob-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                <polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            <span>HOME</span>
+        </a>
+        <a href="/cart" class="gi-mob-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="9" cy="21" r="1"/>
+                <circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            <span>CART</span>
+            <span class="gi-cart-badge gi-mob-cart-badge" id="giMobCartBadge">0</span>
+        </a>
+        <a href="/categories" class="gi-mob-nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            <span>CATEGORIES</span>
+        </a>
+        <a href="/all-product" class="gi-mob-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+            <span>ALL PRODUCT</span>
+        </a>
+        <a href="/profile" class="gi-mob-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span>PROFILE</span>
+        </a>
+    </nav>
+
+    <!-- Main Logic Script -->
+    <script type="module" src="categories.js"></script>
+</body>
+</html>
