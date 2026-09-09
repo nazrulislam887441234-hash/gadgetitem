@@ -32,7 +32,6 @@ body {
   margin-inline: auto;
 }
 
-/* Base Section & Modular Card Wrapping */
 .gi-section {
   padding: 16px 0;
 }
@@ -255,15 +254,14 @@ body {
   border-radius: 6px;
 }
 
-/* Service Badges Section - 2 Line Layout */
+/* Service Badges Section - 5 Trusted Cards without Subtitles */
 .gi-services-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
 }
 
 .gi-service-card {
-  grid-column: span 2;
   background: var(--gi-background);
   border: 1px solid var(--gi-border);
   border-radius: 12px;
@@ -272,11 +270,11 @@ body {
   align-items: center;
   gap: 14px;
   transition: var(--gi-transition);
-  min-width: 0; /* FIX: Prevents CSS Grid Blowout */
+  min-width: 0;
 }
 
 .gi-service-card-wide {
-  grid-column: span 2;
+  grid-column: span 1;
 }
 
 .gi-service-card:hover {
@@ -304,23 +302,14 @@ body {
 }
 
 .gi-service-info {
-  min-width: 0; /* FIX: Allows flex item to shrink */
-  flex: 1; /* FIX: Allows container to calculate available space */
+  min-width: 0;
+  flex: 1;
 }
 
 .gi-service-info h4 {
   font-size: 14px;
   font-weight: 700;
   color: var(--gi-text);
-  margin-bottom: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.gi-service-info p {
-  font-size: 12px;
-  color: var(--gi-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -346,6 +335,18 @@ body {
   border-radius: 50px;
   letter-spacing: -0.2px;
   box-shadow: 0 4px 14px rgba(0, 102, 255, 0.25);
+}
+
+.gi-view-all-link {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gi-primary);
+  text-decoration: none;
+  transition: var(--gi-transition);
+}
+
+.gi-view-all-link:hover {
+  text-decoration: underline;
 }
 
 /* Shop Categories */
@@ -855,13 +856,7 @@ body {
 /* Responsive Styles */
 @media (max-width: 1024px) {
   .gi-services-grid {
-    grid-template-columns: repeat(6, 1fr);
-  }
-  .gi-service-card {
-    grid-column: span 3;
-  }
-  .gi-service-card-wide {
-    grid-column: span 6;
+    grid-template-columns: repeat(3, 1fr);
   }
   .gi-product-grid, .gi-video-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -878,18 +873,13 @@ body {
   .gi-product-grid, .gi-video-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
   .gi-categories-grid { grid-template-columns: repeat(3, 1fr); gap: 10px; }
   
-  /* Services 2-Line Responsive Layout for Mobile */
   .gi-services-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
   }
   .gi-service-card {
-    grid-column: span 1;
     padding: 12px;
     gap: 10px;
-  }
-  .gi-service-card-wide {
-    grid-column: span 2;
   }
   .gi-service-icon {
     width: 36px;
@@ -902,11 +892,7 @@ body {
   .gi-service-info h4 {
     font-size: 12.5px;
   }
-  .gi-service-info p {
-    font-size: 10.5px;
-  }
   
-  /* YouTube Header Mobile */
   .gi-yt-channel-card {
     flex-direction: column;
     align-items: flex-start;
