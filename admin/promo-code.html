@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promo Code Management - Gadgeta Item Admin</title>
+    <link rel="icon" type="image/png" href="https://store.ghotimarket.com/amrweb/website-logo.png">
+    <link rel="stylesheet" href="promo-code.css">
+</head>
+<body>
+    <!-- Full-screen Loading Shield during Auth Check -->
+    <div id="auth-loading-screen" class="auth-loading-shield">
+        <div class="loader-spinner"></div>
+        <p>Verifying secure session...</p>
+    </div>
+
+    <!-- Main Dashboard Layout -->
+    <div class="admin-layout" id="admin-layout" style="display: none;">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-brand">
+                <img src="https://store.ghotimarket.com/amrweb/website-logo.png" alt="Gadgeta Item Logo" class="brand-logo">
+                <span class="brand-title">Gadgeta Item</span>
+            </div>
+            <nav class="sidebar-menu">
+                <a href="admin-dashboard.html" class="menu-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+                    Dashboard
+                </a>
+                <a href="admin-products.html" class="menu-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                    Products
+                </a>
+                <a href="admin-orders.html" class="menu-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                    Orders
+                </a>
+                <a href="admin-promo.html" class="menu-item active">
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+                    Promo Codes
+                </a>
+                <a href="admin-users.html" class="menu-item">
+                    <svg class="nav-icon" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                    Admins / Users
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <button id="logout-btn" class="logout-button">
+                    <svg class="btn-icon" viewBox="0 0 24 24"><path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/></svg>
+                    Sign Out
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Body -->
+        <main class="admin-main">
+            <!-- Top Header Banner -->
+            <header class="main-header">
+                <div class="header-title-wrapper">
+                    <h1>Promo Code Control Center</h1>
+                    <p>Manage discounts, order thresholds, and expiry limits seamlessly.</p>
+                </div>
+                <div class="header-user-badge">
+                    <span id="user-email-display">Loading...</span>
+                    <span id="user-role-badge" class="role-badge">Verified</span>
+                </div>
+            </header>
+
+            <!-- Statistics Cards -->
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon-wrap bg-blue">
+                        <svg class="stat-icon" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Total Promos</h3>
+                        <p id="stat-total">0</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap bg-green">
+                        <svg class="stat-icon" viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Active Promos</h3>
+                        <p id="stat-active">0</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap bg-amber">
+                        <svg class="stat-icon" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Inactive Promos</h3>
+                        <p id="stat-inactive">0</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon-wrap bg-red">
+                        <svg class="stat-icon" viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.47 2 11.99S6.47 22 11.99 22 22 17.52 22 11.99 17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+                    </div>
+                    <div class="stat-content">
+                        <h3>Expired Promos</h3>
+                        <p id="stat-expired">0</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Control Bar (Search & Create Action) -->
+            <section class="control-toolbar">
+                <div class="search-box">
+                    <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                    <input type="text" id="search-input" placeholder="Search promo codes...">
+                </div>
+                <button id="open-create-modal-btn" class="primary-btn">
+                    <svg class="btn-icon" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    Create New Promo
+                </button>
+            </section>
+
+            <!-- Promo Data Display Section -->
+            <section class="table-container-card">
+                <div class="table-responsive">
+                    <table class="promo-table">
+                        <thead>
+                            <tr>
+                                <th>Promo Code</th>
+                                <th>Discount</th>
+                                <th>Shopping Limit</th>
+                                <th>Expiration</th>
+                                <th>Status</th>
+                                <th>Created Date</th>
+                                <th class="text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="promo-table-body">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Empty State Component -->
+                <div id="empty-state" class="state-container" style="display: none;">
+                    <svg class="state-svg-icon" viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+                    <h3>No Promo Codes Found</h3>
+                    <p>There are no promo codes matching your criteria right now.</p>
+                </div>
+
+                <!-- Error State Component -->
+                <div id="error-state" class="state-container" style="display: none;">
+                    <svg class="state-svg-icon error-color" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+                    <h3>Failed to Load Promo Data</h3>
+                    <p id="error-message-text">An unexpected network or security permission error occurred.</p>
+                    <button id="retry-fetch-btn" class="secondary-btn">Retry Loading</button>
+                </div>
+
+                <!-- Load More Section -->
+                <div id="load-more-container" class="load-more-wrapper" style="display: none;">
+                    <button id="load-more-btn" class="secondary-btn">Load More Promos</button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Create / Edit Promo Modal Form -->
+    <div id="promo-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h2 id="modal-title">Create New Promo Code</h2>
+                <button class="modal-close-btn" id="modal-close-btn">
+                    <svg viewBox="0 0 24 24" class="icon-close"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+            </div>
+            <form id="promo-form" class="modal-body-form">
+                <input type="hidden" id="form-original-code" value="">
+                
+                <div class="form-group">
+                    <label for="form-code">Promo Code ID *</label>
+                    <input type="text" id="form-code" required placeholder="e.g. SUMMER2026" autocomplete="off">
+                    <small>Code is normalized to uppercase automatically.</small>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="form-discount">Discount Amount (BDT) *</label>
+                        <input type="number" id="form-discount" min="1" step="any" required placeholder="e.g. 100">
+                    </div>
+                    <div class="form-group">
+                        <label for="form-limit">Shopping Limit (BDT) *</label>
+                        <input type="number" id="form-limit" min="0" step="any" required value="0" placeholder="e.g. 1000">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="form-expiry">Expiration Date & Time *</label>
+                    <input type="datetime-local" id="form-expiry" required>
+                </div>
+
+                <div class="form-group checkbox-row">
+                    <label class="switch-label" for="form-active">
+                        <input type="checkbox" id="form-active" checked>
+                        <span class="slider-toggle"></span>
+                        <span class="toggle-text-label">Active Promo Status</span>
+                    </label>
+                </div>
+
+                <div id="form-feedback" class="form-feedback-msg" style="display: none;"></div>
+
+                <div class="modal-footer">
+                    <button type="button" class="secondary-btn" id="modal-cancel-btn">Cancel</button>
+                    <button type="submit" class="primary-btn" id="modal-save-btn">Save Promo Code</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal Component -->
+    <div id="confirm-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-card confirm-card">
+            <div class="modal-header">
+                <h2>Confirm Deletion</h2>
+            </div>
+            <div class="modal-body-text">
+                <p>Are you sure you want to permanently delete promo code <strong id="confirm-target-code"></strong>? This action cannot be undone and will break any active customer validation referencing this exact token.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="secondary-btn" id="confirm-cancel-btn">Cancel</button>
+                <button type="button" class="danger-btn" id="confirm-proceed-btn">Delete Permanently</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast Message -->
+    <div id="app-toast" class="toast-notification" style="display: none;">
+        <span id="toast-msg">Operation completed successfully.</span>
+    </div>
+
+    <!-- Firebase App & Firestore SDK Module Imports (v10.8.0) -->
+    <script type="module" src="promo-code.js"></script>
+</body>
+</html>
