@@ -77,8 +77,8 @@
                     <svg class="gi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                     <input type="text" id="giSearchInput" placeholder="Search gadgets..." aria-label="Search gadgets">
                 </div>
-                <a href="/cart" class="gi-action-btn gi-cart-btn" aria-label="Cart">
-                    <svg class="gi-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                <a href="/cart" class="gi-action-btn gi-cart-btn" id="giCartActionBtn" aria-label="Cart">
+                    <svg class="gi-icon" id="giCartOrLoginIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
                     <span class="gi-badge" id="giCartCount">0</span>
                 </a>
                 <a href="/profile.html" class="gi-action-btn gi-profile-btn" aria-label="Profile">
@@ -101,7 +101,6 @@
                             <div class="gi-carousel-slide"><a href="#" id="giBannerLink2"><img src="https://store.ghotimarket.com/amrweb/banner2.png" alt="Promotional Banner 2" loading="lazy"></a></div>
                             <div class="gi-carousel-slide"><a href="#" id="giBannerLink3"><img src="https://store.ghotimarket.com/amrweb/banner3.png" alt="Promotional Banner 3" loading="lazy"></a></div>
                         </div>
-                        <!-- Next/Prev arrow buttons removed as requested -->
                         <div class="gi-carousel-dots" id="giCarouselDots">
                             <span class="dot active" data-slide="0"></span>
                             <span class="dot" data-slide="1"></span>
@@ -112,7 +111,7 @@
             </div>
         </section>
 
-        <!-- Service Badges Section (Organized in 2 Lines Card Layout) -->
+        <!-- Service Badges Section (5 Trusted Cards without Subtitles) -->
         <section class="gi-section gi-services-section">
             <div class="gi-container">
                 <div class="gi-section-card gi-services-card">
@@ -123,7 +122,6 @@
                             </div>
                             <div class="gi-service-info">
                                 <h4>Fast Delivery</h4>
-                                <p>Super fast home delivery</p>
                             </div>
                         </div>
                         <div class="gi-service-card">
@@ -132,7 +130,6 @@
                             </div>
                             <div class="gi-service-info">
                                 <h4>Best Price</h4>
-                                <p>Guaranteed best deal</p>
                             </div>
                         </div>
                         <div class="gi-service-card">
@@ -141,7 +138,6 @@
                             </div>
                             <div class="gi-service-info">
                                 <h4>Customer Support</h4>
-                                <p>24/7 Dedicated help</p>
                             </div>
                         </div>
                         <div class="gi-service-card">
@@ -150,7 +146,6 @@
                             </div>
                             <div class="gi-service-info">
                                 <h4>Organic Product</h4>
-                                <p>100% Authentic gadget</p>
                             </div>
                         </div>
                         <div class="gi-service-card gi-service-card-wide">
@@ -159,7 +154,6 @@
                             </div>
                             <div class="gi-service-info">
                                 <h4>Easy Policy</h4>
-                                <p>Hassle-free return & replacement</p>
                             </div>
                         </div>
                     </div>
@@ -172,7 +166,10 @@
             <div class="gi-container">
                 <div class="gi-section-card">
                     <div class="gi-section-header">
-                        <span class="gi-section-tag">Shop Categories</span>
+                        <div class="gi-category-box-banner">
+                            <span class="gi-section-tag">Check the categories</span>
+                        </div>
+                        <a href="/categories" class="gi-view-all-link">view all</a>
                     </div>
                     <div class="gi-categories-grid" id="giCategoriesContainer">
                         <!-- Dynamically populated from JS config safely -->
@@ -215,11 +212,10 @@
             </div>
         </section>
 
-        <!-- YouTube Channel Section (YouTube App-Style Header Layout) -->
+        <!-- YouTube Channel Section -->
         <section class="gi-section gi-youtube-section">
             <div class="gi-container">
                 <div class="gi-section-card gi-yt-section-card">
-                    <!-- YouTube Channel Profile Box -->
                     <div class="gi-yt-channel-card">
                         <div class="gi-yt-channel-left">
                             <div class="gi-yt-avatar-wrap">
@@ -265,7 +261,7 @@
     </div>
 
     <!-- Mandatory Footer -->
-    <footer class="tj-footer">
+   <footer class="tj-footer">
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
         .tj-footer { --tj-bg: #020817; --tj-blue: #0066ff; --tj-cyan: #00bfff; --tj-text: #ffffff; --tj-muted: #b4c7e8; --tj-border: rgba(255,255,255,.14); position: relative; overflow: hidden; background: radial-gradient(750px 450px at 0% 0%, rgba(0,102,255,.40), transparent 65%), linear-gradient(180deg, #06245b 0%, #031438 48%, #020817 100%); color: var(--tj-text); font-family: 'Hind Siliguri', 'Outfit', sans-serif; padding: 80px 0 0; border-top: 1px solid rgba(0,140,255,.35); isolation: isolate; }
@@ -359,7 +355,7 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             <span>HOME</span>
         </a>
-        <a href="/cart" class="gi-mob-nav-item">
+        <a href="/cart" class="gi-mob-nav-item" id="giMobCartItem">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
             <span>CART</span>
         </a>
