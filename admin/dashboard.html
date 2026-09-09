@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Gadget Item</title>
+    <meta name="description" content="Gadget Item professional store management dashboard.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" href="https://store.ghotimarket.com/amrweb/website-logo.png">
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+
+    <!-- Initial Authentication Loading Screen (Prevents Flash) -->
+    <div id="auth-loader" class="auth-loader">
+        <div class="loader-content">
+            <svg class="spinner-icon" viewBox="0 0 50 50">
+                <circle cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+            </svg>
+            <h2>Checking account access...</h2>
+            <p>Please wait while we verify your authentication status.</p>
+        </div>
+    </div>
+
+    <!-- Main Protected Dashboard Container -->
+    <div id="app-container" class="app-container hidden">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <button id="sidebar-toggle" class="btn-icon mobile-menu-btn" aria-label="Toggle Navigation Menu">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </button>
+                <div class="header-brand">
+                    <div class="brand-logo-wrap">
+                        <img src="https://store.ghotimarket.com/amrweb/website-logo.png" alt="Gadget Item Logo">
+                    </div>
+                    <div class="brand-text">
+                        <h2>Gadget Item</h2>
+                        <span class="header-subtitle">Management Console</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="header-right">
+                <div class="header-user-panel">
+                    <div class="user-info">
+                        <span id="header-user-email" class="user-email">Loading...</span>
+                        <div id="header-role-badge-container">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+                    <button id="logout-btn" class="btn btn-outline-danger" aria-label="Logout">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                        <span>Logout</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Layout Wrapper -->
+        <div class="dashboard-layout-wrapper">
+            
+            <!-- Mobile Overlay Background -->
+            <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+            <!-- Sidebar Navigation Drawer -->
+            <aside id="sidebar" class="app-sidebar">
+                <div class="sidebar-header">
+                    <h3>Navigation</h3>
+                    <button id="sidebar-close" class="btn-icon close-drawer-btn" aria-label="Close Navigation Menu">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                    </button>
+                </div>
+                <nav class="sidebar-nav">
+                    <a href="product-upload.html" class="sidebar-nav-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                        <span>Product Upload</span>
+                    </a>
+                    <a href="categories.html" class="sidebar-nav-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                        <span>Manage Categories</span>
+                    </a>
+                    <a href="product-manage.html" class="sidebar-nav-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        <span>Product Manage & Popular</span>
+                    </a>
+                    <a href="orders.html" class="sidebar-nav-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        <span>All Order & Manage</span>
+                    </a>
+                    <a href="upload-video.html" class="sidebar-nav-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                        <span>Upload Home Video</span>
+                    </a>
+                    <a href="promo-code.html" class="sidebar-nav-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                        <span>Promo Code Manage</span>
+                    </a>
+                    <a href="imgbb.html" class="sidebar-nav-item">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="11 3 11 15"></polyline><polyline points="7 7 11 3 15 7"></polyline></svg>
+                        <span>Image Upload Key</span>
+                    </a>
+                    <!-- Card #8: Owner Only -->
+                    <a href="admins.html" id="admins-sidebar-link" class="sidebar-nav-item hidden">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        <span>All Admins Manage</span>
+                    </a>
+                </nav>
+            </aside>
+
+            <!-- Main Content Area -->
+            <main class="main-content">
+                
+                <!-- Welcome Banner -->
+                <div class="welcome-banner">
+                    <div class="welcome-text">
+                        <h1>Welcome back, <span id="welcome-user-email">User</span></h1>
+                        <p>Manage your Gadget Item store operations efficiently from one central dashboard.</p>
+                    </div>
+                    <div class="watermark-badge">
+                        <img src="https://store.ghotimarket.com/amrweb/watermark.png" alt="Watermark Icon">
+                    </div>
+                </div>
+
+                <!-- Quick Status Info Panel -->
+                <div class="status-info-panel">
+                    <div class="status-item">
+                        <div class="status-icon-wrap">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        </div>
+                        <div>
+                            <span class="status-label">Account</span>
+                            <span id="panel-account-email" class="status-value">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon-wrap">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        </div>
+                        <div>
+                            <span class="status-label">Assigned Role</span>
+                            <span id="panel-role-text" class="status-value">Loading...</span>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon-wrap">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        </div>
+                        <div>
+                            <span class="status-label">Authentication Status</span>
+                            <span class="status-value text-success">Fully Authenticated</span>
+                        </div>
+                    </div>
+                    <div class="status-item">
+                        <div class="status-icon-wrap">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                        </div>
+                        <div>
+                            <span class="status-label">Access Level</span>
+                            <span id="panel-access-level" class="status-value">Verified Access</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Management Cards Grid Section -->
+                <section class="management-section">
+                    <div class="section-title-row">
+                        <h3>Store Management Modules</h3>
+                        <span id="module-count-badge" class="module-count">7 Modules Available</span>
+                    </div>
+
+                    <div id="cards-grid" class="management-grid">
+                        
+                        <!-- Card 1: Product Upload -->
+                        <a href="product-upload.html" class="manage-card">
+                            <div class="card-icon-wrap primary-bg">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                            </div>
+                            <div class="manage-card-body">
+                                <h4>Product Upload</h4>
+                                <p>Add new products to your store inventory.</p>
+                            </div>
+                            <div class="card-arrow">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </div>
+                        </a>
+
+                        <!-- Card 2: Manage Categories -->
+                        <a href="categories.html" class="manage-card">
+                            <div class="card-icon-wrap indigo-bg">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                            </div>
+                            <div class="manage-card-body">
+                                <h4>Manage Categories</h4>
+                                <p>Create, edit and organize product categories.</p>
+                            </div>
+                            <div class="card-arrow">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </div>
+                        </a>
+
+                        <!-- Card 3: Product Manage & Popular -->
+                        <a href="product-manage.html" class="manage-card">
+                            <div class="card-icon-wrap blue-bg">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                            </div>
+                            <div class="manage-card-body">
+                                <h4>Product Manage & Popular Product</h4>
+                                <p>Control inventory listings and feature popular items.</p>
+                            </div>
+                            <div class="card-arrow">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </div>
+                        </a>
+
+                        <!-- Card 4: All Order & Manage -->
+                        <a href="orders.html" class="manage-card">
+                            <div class="card-icon-wrap green-bg">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                            </div>
+                            <div class="manage-card-body">
+                                <h4>All Order & Manage</h4>
+                                <p>View customer orders, update statuses and process shipments.</p>
+                            </div>
+                            <div class="card-arrow">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </div>
+                        </a>
+
+                        <!-- Card 5: Upload Home Page Video & Manage -->
+                        <a href="upload-video.html" class="manage-card">
+                            <div class="card-icon-wrap purple-bg">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
+                            </div>
+                            <div class="manage-card-body">
+                                <h4>Upload Home Page Video & Manage</h4>
+                                <p>Upload promotional hero videos for the store homepage.</p>
+                            </div>
+                            <div class="card-arrow">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </div>
+                        </a>
+
+                        <!-- Card 6: Promo Code Create & Manage -->
+                        <a href="promo-code.html" class="manage-card">
+                            <div class="card-icon-wrap amber-bg">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line></svg>
+                            </div>
+                            <div class="manage-card-body">
+                                <h4>Promo Code Create & Manage</h4>
+                                <p>Set up and monitor discount codes for marketing campaigns.</p>
+                            </div>
+                            <div class="card-arrow">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </div>
+                        </a>
+
+                        <!-- Card 7: Image Upload Key -->
+                        <a href="imgbb.html" class="manage-card">
+                            <div class="card-icon-wrap teal-bg">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="11 3 11 15"></polyline><polyline points="7 7 11 3 15 7"></polyline></svg>
+                            </div>
+                            <div class="manage-card-body">
+                                <h4>Image Upload Key</h4>
+                                <p>Configure API credentials for ImgBB cloud storage.</p>
+                            </div>
+                            <div class="card-arrow">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </div>
+                        </a>
+
+                        <!-- Card 8: All Admins Manage (Owner Only) -->
+                        <a href="admins.html" id="admins-card-item" class="manage-card owner-exclusive hidden">
+                            <div class="card-icon-wrap rose-bg">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                            </div>
+                            <div class="manage-card-body">
+                                <h4>All Admins Manage</h4>
+                                <p>Authorize administrators, manage permissions and status.</p>
+                            </div>
+                            <div class="card-arrow">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </div>
+                        </a>
+
+                    </div>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Application Script Logic -->
+    <script type="module" src="dashboard.js"></script>
+</body>
+</html>
