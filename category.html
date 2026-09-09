@@ -3,92 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Categories | Gadgeta Item</title>
-    <meta name="description" content="Explore products from Gadgeta Item.">
-    <link rel="icon" href="https://store.ghotimarket.com/amrweb/website-logo.png">
-    <link rel="stylesheet" href="category.css">
+    <title>Gadgeta Item | Shop Gadgets Online</title>
+    <meta name="description" content="Explore top quality gadgets and accessories at Gadgeta Item. Shop the latest tech products with secure checkout and fast delivery.">
     
     <!-- Open Graph Metadata -->
-    <meta property="og:title" content="Categories | Gadgeta Item" id="og-title">
-    <meta property="og:description" content="Explore products from Gadgeta Item." id="og-desc">
-    <meta property="og:image" content="https://ghotimarket.com/amrweb/banner1.png" id="og-image">
-    <meta property="og:url" content="" id="og-url">
-    
+    <meta property="og:title" content="Gadgeta Item | Shop Gadgets Online">
+    <meta property="og:description" content="Explore top quality gadgets and accessories at Gadgeta Item. Shop the latest tech products with secure checkout and fast delivery.">
+    <meta property="og:image" content="https://ghotimarket.com/amrweb/banner1.png">
+    <meta property="og:url" content="">
+    <meta property="og:type" content="website">
+
     <!-- Twitter Metadata -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Categories | Gadgeta Item" id="tw-title">
-    <meta name="twitter:description" content="Explore products from Gadgeta Item." id="tw-desc">
-    <meta name="twitter:image" content="https://ghotimarket.com/amrweb/banner1.png" id="tw-image">
+    <meta name="twitter:title" content="Gadgeta Item | Shop Gadgets Online">
+    <meta name="twitter:description" content="Explore top quality gadgets and accessories at Gadgeta Item. Shop the latest tech products with secure checkout and fast delivery.">
+    <meta name="twitter:image" content="https://ghotimarket.com/amrweb/banner1.png">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="">
+
+    <!-- Favicon -->
+    <link rel="icon" href="https://store.ghotimarket.com/amrweb/website-logo.png" type="image/png">
+
+    <!-- Stylesheet -->
+    <link rel="stylesheet" href="category.css">
 
     <!-- Structured Data -->
-    <script type="application/ld+json" id="structured-data">
+    <script type="application/ld+json" id="seo-schema">
     {
       "@context": "https://schema.org",
       "@type": "CollectionPage",
-      "name": "Categories | Gadgeta Item",
+      "name": "Gadgeta Item",
       "url": ""
     }
     </script>
 </head>
 <body>
+
     <!-- Header -->
     <header class="gi-header">
         <div class="gi-header-container">
-            <a href="/" class="gi-logo-link">
-                <img src="https://store.ghotimarket.com/amrweb/website-logo.png" alt="Gadgeta Item" class="gi-logo-img">
-                <span class="gi-logo-text">Gadgeta Item</span>
+            <a href="/" class="gi-brand-logo">
+                <img src="https://store.ghotimarket.com/amrweb/website-logo.png" alt="Gadgeta Item Logo" class="gi-logo-img">
+                <span class="gi-brand-text">Gadgeta Item</span>
             </a>
-            <div class="gi-header-right">
-                <a href="/cart" class="gi-cart-icon-wrapper" aria-label="Cart">
-                    <svg class="gi-svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                    <span class="gi-cart-badge" id="gi-header-cart-count">0</span>
+            <div class="gi-header-actions">
+                <a href="/cart" class="gi-cart-icon-btn" aria-label="Shopping Cart">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="9" cy="21" r="1"/>
+                        <circle cx="20" cy="21" r="1"/>
+                        <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                    </svg>
+                    <span id="gi-cart-badge" class="gi-cart-badge">0</span>
                 </a>
+                <div id="gi-user-auth-container">
+                    <button id="gi-header-login-btn" class="gi-header-login-btn" style="display:none;">Sign In</button>
+                    <div id="gi-header-user-profile" class="gi-header-user-profile" style="display:none;" title="User Profile">
+                        <img id="gi-user-avatar" src="" alt="Profile">
+                    </div>
+                </div>
             </div>
         </div>
     </header>
 
     <!-- Main Content -->
     <main class="gi-main-content">
-        <!-- Skeleton Header -->
-        <section class="gi-category-header" id="gi-category-header-section">
-            <div class="gi-skeleton gi-sk-header-img"></div>
-            <div class="gi-category-info">
-                <div class="gi-skeleton gi-sk-title"></div>
-                <div class="gi-skeleton gi-sk-subtitle"></div>
-            </div>
-        </section>
+        <div class="gi-container">
+            
+            <!-- Category Header / Banner Section -->
+            <section id="gi-category-header" class="gi-category-header" style="display: none;">
+                <div class="gi-category-banner-wrap">
+                    <img id="gi-cat-banner-img" src="https://ghotimarket.com/amrweb/banner1.png" alt="Category Banner" class="gi-cat-banner-img">
+                </div>
+                <div class="gi-category-info">
+                    <h1 id="gi-cat-title" class="gi-cat-title">Loading Category...</h1>
+                    <p id="gi-cat-desc" class="gi-cat-desc">Explore products from this category</p>
+                    <span id="gi-cat-count" class="gi-cat-count">0 products loaded</span>
+                </div>
+            </section>
 
-        <!-- Search Bar Section -->
-        <section class="gi-search-section">
-            <div class="gi-search-box">
-                <svg class="gi-svg-icon gi-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="text" id="gi-category-search-input" placeholder="Search products..." autocomplete="off">
-            </div>
-        </section>
+            <!-- Search and Filter Bar -->
+            <section class="gi-search-filter-section" id="gi-search-section" style="display: none;">
+                <div class="gi-search-box-wrap">
+                    <svg class="gi-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" id="gi-product-search-input" placeholder="Search products by name or SKU..." autocomplete="off">
+                    <button id="gi-clear-search-btn" class="gi-clear-search-btn" style="display: none;" aria-label="Clear Search">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"></line>
+                            <line x1="6" y1="6" x2="18" y2="18"></line>
+                        </svg>
+                    </button>
+                </div>
+                <div class="gi-search-results-info">
+                    Showing <span id="gi-filtered-count">0</span> of <span id="gi-total-loaded-count">0</span> loaded products
+                </div>
+            </section>
 
-        <!-- Product Grid Area -->
-        <section class="gi-products-section">
-            <div class="gi-product-grid" id="gi-product-grid">
-                <!-- Skeletons -->
-                <div class="gi-product-card-skeleton"><div class="gi-skeleton gi-sk-img"></div><div class="gi-skeleton gi-sk-line"></div><div class="gi-skeleton gi-sk-line short"></div></div>
-                <div class="gi-product-card-skeleton"><div class="gi-skeleton gi-sk-img"></div><div class="gi-skeleton gi-sk-line"></div><div class="gi-skeleton gi-sk-line short"></div></div>
-                <div class="gi-product-card-skeleton"><div class="gi-skeleton gi-sk-img"></div><div class="gi-skeleton gi-sk-line"></div><div class="gi-skeleton gi-sk-line short"></div></div>
-                <div class="gi-product-card-skeleton"><div class="gi-skeleton gi-sk-img"></div><div class="gi-skeleton gi-sk-line"></div><div class="gi-skeleton gi-sk-line short"></div></div>
+            <!-- Skeleton Loader Grid -->
+            <section id="gi-skeleton-grid" class="gi-product-grid">
+                <!-- Skeleton Card 1 -->
+                <div class="gi-skeleton-card">
+                    <div class="gi-skeleton-img"></div>
+                    <div class="gi-skeleton-line gi-skeleton-title"></div>
+                    <div class="gi-skeleton-line gi-skeleton-price"></div>
+                    <div class="gi-skeleton-line gi-skeleton-btn"></div>
+                </div>
+                <!-- Skeleton Card 2 -->
+                <div class="gi-skeleton-card">
+                    <div class="gi-skeleton-img"></div>
+                    <div class="gi-skeleton-line gi-skeleton-title"></div>
+                    <div class="gi-skeleton-line gi-skeleton-price"></div>
+                    <div class="gi-skeleton-line gi-skeleton-btn"></div>
+                </div>
+                <!-- Skeleton Card 3 -->
+                <div class="gi-skeleton-card">
+                    <div class="gi-skeleton-img"></div>
+                    <div class="gi-skeleton-line gi-skeleton-title"></div>
+                    <div class="gi-skeleton-line gi-skeleton-price"></div>
+                    <div class="gi-skeleton-line gi-skeleton-btn"></div>
+                </div>
+                <!-- Skeleton Card 4 -->
+                <div class="gi-skeleton-card">
+                    <div class="gi-skeleton-img"></div>
+                    <div class="gi-skeleton-line gi-skeleton-title"></div>
+                    <div class="gi-skeleton-line gi-skeleton-price"></div>
+                    <div class="gi-skeleton-line gi-skeleton-btn"></div>
+                </div>
+            </section>
+
+            <!-- Product Grid -->
+            <section id="gi-product-grid" class="gi-product-grid" style="display: none;"></section>
+
+            <!-- Load More Container -->
+            <div id="gi-load-more-container" class="gi-load-more-container" style="display: none;">
+                <button id="gi-load-more-btn" class="gi-load-more-btn">
+                    <span>Load More Products</span>
+                    <div class="gi-btn-spinner" style="display: none;"></div>
+                </button>
             </div>
 
-            <!-- Dynamic Messages -->
-            <div id="gi-category-message-container" class="gi-message-container gi-hidden"></div>
-
-            <!-- Load More -->
-            <div class="gi-load-more-wrapper" id="gi-load-more-wrapper">
-                <button id="gi-load-more-btn" class="gi-btn gi-btn-outline gi-hidden">LOAD MORE</button>
-                <p id="gi-end-message" class="gi-end-message gi-hidden">You've reached the end of this category.</p>
+            <!-- Empty State Container -->
+            <div id="gi-empty-state" class="gi-state-container" style="display: none;">
+                <div class="gi-state-icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                    </svg>
+                </div>
+                <h2 id="gi-empty-title">No Products Found</h2>
+                <p id="gi-empty-desc">Sorry, there are currently no active products in this category.</p>
+                <a href="/all-product" class="gi-primary-btn">Browse All Products</a>
             </div>
-        </section>
+
+            <!-- Error State Container -->
+            <div id="gi-error-state" class="gi-state-container" style="display: none;">
+                <div class="gi-state-icon-wrap gi-error-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </div>
+                <h2 id="gi-error-title">Category Not Found</h2>
+                <p id="gi-error-desc">The category you are looking for does not exist or has been removed.</p>
+                <button id="gi-retry-btn" class="gi-primary-btn" style="display: none;">Try Again</button>
+            </div>
+
+        </div>
     </main>
 
-    <!-- Footer -->
-     <footer class="tj-footer">
+       <footer class="tj-footer">
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
         .tj-footer { --tj-bg: #020817; --tj-blue: #0066ff; --tj-cyan: #00bfff; --tj-text: #ffffff; --tj-muted: #b4c7e8; --tj-border: rgba(255,255,255,.14); position: relative; overflow: hidden; background: radial-gradient(750px 450px at 0% 0%, rgba(0,102,255,.40), transparent 65%), linear-gradient(180deg, #06245b 0%, #031438 48%, #020817 100%); color: var(--tj-text); font-family: 'Hind Siliguri', 'Outfit', sans-serif; padding: 80px 0 0; border-top: 1px solid rgba(0,140,255,.35); isolation: isolate; }
@@ -177,45 +265,133 @@
     </footer>
 
     <!-- Mobile Bottom Navigation -->
-    <nav class="gi-mobile-bottom-nav" aria-label="Mobile Navigation"> 
-        <a href="/" class="gi-mob-nav-item"> 
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> 
-            <span>HOME</span> 
-        </a> 
-        <a href="/cart" class="gi-mob-nav-item"> 
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg> 
-            <span>CART</span> 
-        </a> 
-        <a href="/categories" class="gi-mob-nav-item gi-active"> 
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> 
-            <span>CATEGORIES</span> 
-        </a> 
-        <a href="/all-product" class="gi-mob-nav-item"> 
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg> 
-            <span>ALL PRODUCT</span> 
-        </a> 
-        <a href="/profile" class="gi-mob-nav-item"> 
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> 
-            <span>PROFILE</span> 
-        </a> 
+    <nav class="gi-mob-nav">
+        <a href="/" class="gi-mob-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+            <span>HOME</span>
+        </a>
+        <a href="/cart" class="gi-mob-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="9" cy="21" r="1"/>
+                <circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+            </svg>
+            <span>CART</span>
+        </a>
+        <a href="/categories" class="gi-mob-nav-item active">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"/>
+                <rect x="14" y="3" width="7" height="7"/>
+                <rect x="14" y="14" width="7" height="7"/>
+                <rect x="3" y="14" width="7" height="7"/>
+            </svg>
+            <span>CATEGORIES</span>
+        </a>
+        <a href="/all-product" class="gi-mob-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="8" y1="6" x2="21" y2="6"/>
+                <line x1="8" y1="12" x2="21" y2="12"/>
+                <line x1="8" y1="18" x2="21" y2="18"/>
+                <line x1="3" y1="6" x2="3.01" y2="6"/>
+                <line x1="3" y1="12" x2="3.01" y2="12"/>
+                <line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+            <span>ALL PRODUCT</span>
+        </a>
+        <a href="/profile" class="gi-mob-nav-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
+            </svg>
+            <span>PROFILE</span>
+        </a>
     </nav>
 
-    <!-- Custom Login Modal -->
-    <div id="gi-auth-modal" class="gi-modal gi-hidden">
-        <div class="gi-modal-content">
-            <h3>Sign in to continue</h3>
-            <p>Please authenticate with your Google account to manage your cart and proceed with orders.</p>
-            <button id="gi-google-signin-btn" class="gi-google-btn">
-                <svg viewBox="0 0 24 24" width="18" height="18"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.19v3.15C3.17 21.36 7.23 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.5-.38-2.27s.13-1.55.38-2.27V6.58H1.19C.43 8.12 0 9.87 0 11.7c0 1.83.43 3.58 1.19 5.12l4.09-3.15z"/><path fill="#EA4335" d="M12 4.75c1.76 0 3.34.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.23 0 3.17 2.64 1.19 6.58l4.09 3.15c.95-2.83 3.6-4.98 6.72-4.98z"/></svg>
-                Continue with Google
+    <!-- Google Login Modal -->
+    <div id="gi-login-modal" class="gi-modal-overlay" style="display: none;">
+        <div class="gi-modal-card gi-auth-modal-card">
+            <button id="gi-login-close-btn" class="gi-modal-close-btn" aria-label="Close modal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
             </button>
-            <button id="gi-modal-close-btn" class="gi-btn gi-btn-text">Cancel</button>
+            <div class="gi-auth-header">
+                <img src="https://store.ghotimarket.com/amrweb/website-logo.png" alt="Logo" class="gi-auth-logo">
+                <h2>Sign in to Gadgeta Item</h2>
+                <p>Access your cart, wishlist, and seamless checkout.</p>
+            </div>
+            <button id="gi-google-signin-btn" class="gi-google-signin-btn">
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                <span>Continue with Google</span>
+            </button>
         </div>
     </div>
 
-    <!-- Toast Notification System -->
-    <div id="gi-toast" class="gi-toast"></div>
+    <!-- Variant Selection Modal -->
+    <div id="gi-variant-modal" class="gi-modal-overlay" style="display: none;">
+        <div class="gi-modal-card gi-variant-modal-card">
+            <button id="gi-variant-close-btn" class="gi-modal-close-btn" aria-label="Close modal">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <div class="gi-variant-header">
+                <img id="gi-modal-prod-img" src="" alt="Product" class="gi-modal-prod-img">
+                <div class="gi-modal-prod-info">
+                    <h3 id="gi-modal-prod-name">Product Name</h3>
+                    <div class="gi-modal-price-box">
+                        <span id="gi-modal-prod-price" class="gi-modal-current-price">৳0</span>
+                        <span id="gi-modal-prod-old-price" class="gi-modal-old-price" style="display:none;">৳0</span>
+                        <span id="gi-modal-discount-badge" class="gi-modal-discount-badge" style="display:none;">0% OFF</span>
+                    </div>
+                </div>
+            </div>
 
+            <div id="gi-variant-groups-container" class="gi-variant-groups-container">
+                <!-- Dynamically generated variant groups -->
+            </div>
+
+            <!-- Quantity Selector -->
+            <div class="gi-modal-qty-row">
+                <span class="gi-modal-qty-label">Quantity</span>
+                <div class="gi-qty-selector">
+                    <button id="gi-qty-minus" class="gi-qty-btn" aria-label="Decrease quantity">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </button>
+                    <span id="gi-qty-value" class="gi-qty-value">1</span>
+                    <button id="gi-qty-plus" class="gi-qty-btn" aria-label="Increase quantity">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="gi-modal-footer-row">
+                <div class="gi-modal-total-display">
+                    <span class="gi-total-label">Total Price:</span>
+                    <span id="gi-modal-total-price" class="gi-total-price">৳0</span>
+                </div>
+                <div class="gi-modal-action-btns">
+                    <button id="gi-modal-cancel-btn" class="gi-secondary-btn">Cancel</button>
+                    <button id="gi-modal-confirm-btn" class="gi-primary-btn">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="gi-toast-container" class="gi-toast-container"></div>
+
+    <!-- JavaScript Application Entry -->
     <script type="module" src="category.js"></script>
 </body>
 </html>
